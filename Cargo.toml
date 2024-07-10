@@ -1,0 +1,20 @@
+[package]
+name = "surrealix"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+surrealix-macros = { path = "./surrealix-macros" }
+surrealix-core = { path = "./surrealix-core" }
+surrealdb = "1.5.3"
+dotenv = "0.15.0"
+convert_case = "0.6.0"
+uuid = "1.9.1"
+serde_json = "1.0.120"
+rust_decimal = "1.35.0"
+chrono = "0.4.38"
+serde = "1.0.204"
+
+
+[workspace]
+members = ["surrealix-macros", "surrealix-core"]
