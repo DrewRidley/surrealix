@@ -1,192 +1,6 @@
-Fetched schema:
-DEFINE TABLE user SCHEMAFULL;
-
-DEFINE FIELD name ON user TYPE string;
-DEFINE FIELD age ON user TYPE int;
-DEFINE FIELD created_at ON user TYPE datetime;
-DEFINE FIELD id ON user TYPE uuid;
-DEFINE FIELD balance ON user TYPE decimal;
-DEFINE FIELD height ON user TYPE float;
-DEFINE FIELD session_duration ON user TYPE duration;
-DEFINE FIELD profile_picture ON user TYPE bytes;
-
-DEFINE FIELD address ON user TYPE object;
-DEFINE FIELD address.street on USER type string;
-DEFINE FIELD address.zip on USER type int;
-
-DEFINE FIELD tags ON user TYPE array;
-DEFINE FIELD tags.* ON user TYPE string;
-
-DEFINE FIELD fixed_tags ON user TYPE array;
-
-
-DEFINE FIELD status ON user TYPE option<string>;
-
-DEFINE FIELD account_type ON user TYPE string ASSERT $value INSIDE ['personal', 'business'];
-
-DEFINE FIELD location ON user TYPE geometry(point);
-
-DEFINE FIELD friends ON user TYPE array;
-DEFINE FIELD friends.* ON user TYPE string;
-
-DEFINE FIELD favorite_numbers ON user TYPE array;
-DEFINE FIELD favorite_numbers.* ON user TYPE int;
-
-DEFINE FIELD email ON user TYPE string ASSERT string::is::email($value);
-
-DEFINE FIELD country_code ON user TYPE string ASSERT $value = /^[A-Z]{3}$/;
-
-DEFINE TABLE post SCHEMAFULL;
-
-DEFINE FIELD title ON post TYPE string;
-DEFINE FIELD content ON post TYPE string;
-DEFINE FIELD tags ON post TYPE array;
-DEFINE FIELD tags.* ON post TYPE string;
-DEFINE FIELD published_at ON post TYPE datetime;
-
-DEFINE FIELD test ON post TYPE object;
-DEFINE FIELD test.a ON post TYPE string;
-DEFINE FIELD test.b ON post TYPE number;
-
-DEFINE TABLE comment SCHEMAFULL;
-
-DEFINE FIELD content ON comment TYPE string;
-DEFINE FIELD created_at ON comment TYPE datetime;
-DEFINE FIELD likes ON comment TYPE int;
-
-DEFINE TABLE product SCHEMAFULL;
-
-DEFINE FIELD name ON product TYPE string;
-DEFINE FIELD price ON product TYPE decimal;
-DEFINE FIELD category ON product TYPE string;
-DEFINE FIELD in_stock ON product TYPE bool;
-DEFINE FIELD dimensions ON product TYPE object;
-
-Parsed schema: Query(Statements([Define(Table(DefineTableStatement { id: None, name: Ident("user"), drop: false, full: true, view: None, permissions: Permissions { select: None, create: None, update: None, delete: None }, changefeed: None, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("name"))]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("age"))]), what: Ident("user"), flex: false, kind: Some(Int), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("created_at"))]), what: Ident("user"), flex: false, kind: Some(Datetime), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("id"))]), what: Ident("user"), flex: false, kind: Some(Uuid), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("balance"))]), what: Ident("user"), flex: false, kind: Some(Decimal), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("height"))]), what: Ident("user"), flex: false, kind: Some(Float), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("session_duration"))]), what: Ident("user"), flex: false, kind: Some(Duration), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("profile_picture"))]), what: Ident("user"), flex: false, kind: Some(Bytes), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("address"))]), what: Ident("user"), flex: false, kind: Some(Object), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("address")), Field(Ident("street"))]), what: Ident("USER"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("address")), Field(Ident("zip"))]), what: Ident("USER"), flex: false, kind: Some(Int), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("tags"))]), what: Ident("user"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("tags")), All]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("fixed_tags"))]), what: Ident("user"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("status"))]), what: Ident("user"), flex: false, kind: Some(Option(String)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("account_type"))]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: Some(Expression(Binary { l: Param(Param(Ident("value"))), o: Inside, r: Array(Array([Strand(Strand("personal")), Strand(Strand("business"))])) })), default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("location"))]), what: Ident("user"), flex: false, kind: Some(Geometry(["point"])), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("friends"))]), what: Ident("user"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("friends")), All]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("favorite_numbers"))]), what: Ident("user"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("favorite_numbers")), All]), what: Ident("user"), flex: false, kind: Some(Int), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("email"))]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: Some(Function(Normal("string::is::email", [Param(Param(Ident("value")))]))), default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("country_code"))]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: Some(Expression(Binary { l: Param(Param(Ident("value"))), o: Equal, r: Regex(/^[A-Z]{3}$/) })), default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Table(DefineTableStatement { id: None, name: Ident("post"), drop: false, full: true, view: None, permissions: Permissions { select: None, create: None, update: None, delete: None }, changefeed: None, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("title"))]), what: Ident("post"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("content"))]), what: Ident("post"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("tags"))]), what: Ident("post"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("tags")), All]), what: Ident("post"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("published_at"))]), what: Ident("post"), flex: false, kind: Some(Datetime), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("test"))]), what: Ident("post"), flex: false, kind: Some(Object), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("test")), Field(Ident("a"))]), what: Ident("post"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("test")), Field(Ident("b"))]), what: Ident("post"), flex: false, kind: Some(Number), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Table(DefineTableStatement { id: None, name: Ident("comment"), drop: false, full: true, view: None, permissions: Permissions { select: None, create: None, update: None, delete: None }, changefeed: None, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("content"))]), what: Ident("comment"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("created_at"))]), what: Ident("comment"), flex: false, kind: Some(Datetime), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("likes"))]), what: Ident("comment"), flex: false, kind: Some(Int), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Table(DefineTableStatement { id: None, name: Ident("product"), drop: false, full: true, view: None, permissions: Permissions { select: None, create: None, update: None, delete: None }, changefeed: None, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("name"))]), what: Ident("product"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("price"))]), what: Ident("product"), flex: false, kind: Some(Decimal), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("category"))]), what: Ident("product"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("in_stock"))]), what: Ident("product"), flex: false, kind: Some(Bool), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None })), Define(Field(DefineFieldStatement { name: Idiom([Field(Ident("dimensions"))]), what: Ident("product"), flex: false, kind: Some(Object), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }))]))
-Found table definition: DefineTableStatement { id: None, name: Ident("user"), drop: false, full: true, view: None, permissions: Permissions { select: None, create: None, update: None, delete: None }, changefeed: None, comment: None }
-Found table definition: DefineTableStatement { id: None, name: Ident("post"), drop: false, full: true, view: None, permissions: Permissions { select: None, create: None, update: None, delete: None }, changefeed: None, comment: None }
-Found table definition: DefineTableStatement { id: None, name: Ident("comment"), drop: false, full: true, view: None, permissions: Permissions { select: None, create: None, update: None, delete: None }, changefeed: None, comment: None }
-Found table definition: DefineTableStatement { id: None, name: Ident("product"), drop: false, full: true, view: None, permissions: Permissions { select: None, create: None, update: None, delete: None }, changefeed: None, comment: None }
-Table definitions after initial pass: [TableDefinition { name: "user", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [] }, TableDefinition { name: "post", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [] }, TableDefinition { name: "comment", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [] }, TableDefinition { name: "product", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [] }]
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("name"))]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("age"))]), what: Ident("user"), flex: false, kind: Some(Int), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("created_at"))]), what: Ident("user"), flex: false, kind: Some(Datetime), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("id"))]), what: Ident("user"), flex: false, kind: Some(Uuid), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("balance"))]), what: Ident("user"), flex: false, kind: Some(Decimal), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("height"))]), what: Ident("user"), flex: false, kind: Some(Float), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("session_duration"))]), what: Ident("user"), flex: false, kind: Some(Duration), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("profile_picture"))]), what: Ident("user"), flex: false, kind: Some(Bytes), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("address"))]), what: Ident("user"), flex: false, kind: Some(Object), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("address")), Field(Ident("street"))]), what: Ident("USER"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: USER
-Found table: USER
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("address")), Field(Ident("zip"))]), what: Ident("USER"), flex: false, kind: Some(Int), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: USER
-Found table: USER
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("tags"))]), what: Ident("user"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("tags")), All]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("fixed_tags"))]), what: Ident("user"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("status"))]), what: Ident("user"), flex: false, kind: Some(Option(String)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("account_type"))]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: Some(Expression(Binary { l: Param(Param(Ident("value"))), o: Inside, r: Array(Array([Strand(Strand("personal")), Strand(Strand("business"))])) })), default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("location"))]), what: Ident("user"), flex: false, kind: Some(Geometry(["point"])), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("friends"))]), what: Ident("user"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("friends")), All]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("favorite_numbers"))]), what: Ident("user"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("favorite_numbers")), All]), what: Ident("user"), flex: false, kind: Some(Int), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("email"))]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: Some(Function(Normal("string::is::email", [Param(Param(Ident("value")))]))), default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("country_code"))]), what: Ident("user"), flex: false, kind: Some(String), value: None, assert: Some(Expression(Binary { l: Param(Param(Ident("value"))), o: Equal, r: Regex(/^[A-Z]{3}$/) })), default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: user
-Found table: user
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("title"))]), what: Ident("post"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: post
-Found table: post
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("content"))]), what: Ident("post"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: post
-Found table: post
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("tags"))]), what: Ident("post"), flex: false, kind: Some(Array(Any, None)), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: post
-Found table: post
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("tags")), All]), what: Ident("post"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: post
-Found table: post
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("published_at"))]), what: Ident("post"), flex: false, kind: Some(Datetime), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: post
-Found table: post
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("test"))]), what: Ident("post"), flex: false, kind: Some(Object), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: post
-Found table: post
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("test")), Field(Ident("a"))]), what: Ident("post"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: post
-Found table: post
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("test")), Field(Ident("b"))]), what: Ident("post"), flex: false, kind: Some(Number), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: post
-Found table: post
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("content"))]), what: Ident("comment"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: comment
-Found table: comment
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("created_at"))]), what: Ident("comment"), flex: false, kind: Some(Datetime), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: comment
-Found table: comment
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("likes"))]), what: Ident("comment"), flex: false, kind: Some(Int), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: comment
-Found table: comment
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("name"))]), what: Ident("product"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: product
-Found table: product
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("price"))]), what: Ident("product"), flex: false, kind: Some(Decimal), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: product
-Found table: product
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("category"))]), what: Ident("product"), flex: false, kind: Some(String), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: product
-Found table: product
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("in_stock"))]), what: Ident("product"), flex: false, kind: Some(Bool), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: product
-Found table: product
-Processing field definition: DefineFieldStatement { name: Idiom([Field(Ident("dimensions"))]), what: Ident("product"), flex: false, kind: Some(Object), value: None, assert: None, default: None, permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, comment: None }
-Looking for table: product
-Found table: product
-Final table definitions: [TableDefinition { name: "user", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [FieldDefinition { name: "name", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "age", field_type: Inline(Int), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "created_at", field_type: Inline(Datetime), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "id", field_type: Inline(Uuid), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "balance", field_type: Inline(Decimal), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "height", field_type: Inline(Float), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "session_duration", field_type: Inline(Duration), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "profile_picture", field_type: Inline(Bytes), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "address", field_type: Object([FieldDefinition { name: "street", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "zip", field_type: Inline(Int), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }]), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "tags", field_type: Array((FieldDefinition { name: "*", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "fixed_tags", field_type: Array((FieldDefinition { name: "*", field_type: Inline(Any), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "status", field_type: Inline(Option(String)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "account_type", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "location", field_type: Inline(Geometry(["point"])), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "friends", field_type: Array((FieldDefinition { name: "*", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "favorite_numbers", field_type: Array((FieldDefinition { name: "*", field_type: Inline(Int), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "email", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "country_code", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }] }, TableDefinition { name: "post", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [FieldDefinition { name: "title", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "content", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "tags", field_type: Array((FieldDefinition { name: "*", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "published_at", field_type: Inline(Datetime), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "test", field_type: Object([FieldDefinition { name: "a", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "b", field_type: Inline(Number), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }]), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }] }, TableDefinition { name: "comment", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [FieldDefinition { name: "content", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "created_at", field_type: Inline(Datetime), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "likes", field_type: Inline(Int), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }] }, TableDefinition { name: "product", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [FieldDefinition { name: "name", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "price", field_type: Inline(Decimal), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "category", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "in_stock", field_type: Inline(Bool), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "dimensions", field_type: Object([]), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }] }]
-Building select response for: 
+Query string: "SELECT name, age, address as addy, ->friend->user.* as friends FROM user;"
+Query string: ["SELECT name, age, address as addy, ->friend->user.* as friends FROM user;"]
+Analyzing select statement: 
 SelectStatement {
     expr: Fields(
         [
@@ -196,13 +10,121 @@ SelectStatement {
                         [
                             Field(
                                 Ident(
-                                    "height",
+                                    "name",
                                 ),
                             ),
                         ],
                     ),
                 ),
                 alias: None,
+            },
+            Single {
+                expr: Idiom(
+                    Idiom(
+                        [
+                            Field(
+                                Ident(
+                                    "age",
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+                alias: None,
+            },
+            Single {
+                expr: Idiom(
+                    Idiom(
+                        [
+                            Field(
+                                Ident(
+                                    "address",
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+                alias: Some(
+                    Idiom(
+                        [
+                            Field(
+                                Ident(
+                                    "addy",
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            },
+            Single {
+                expr: Idiom(
+                    Idiom(
+                        [
+                            Graph(
+                                Graph {
+                                    dir: Out,
+                                    expr: Fields(
+                                        [
+                                            All,
+                                        ],
+                                        false,
+                                    ),
+                                    what: Tables(
+                                        [
+                                            Table(
+                                                "friend",
+                                            ),
+                                        ],
+                                    ),
+                                    cond: None,
+                                    split: None,
+                                    group: None,
+                                    order: None,
+                                    limit: None,
+                                    start: None,
+                                    alias: None,
+                                },
+                            ),
+                            Graph(
+                                Graph {
+                                    dir: Out,
+                                    expr: Fields(
+                                        [
+                                            All,
+                                        ],
+                                        false,
+                                    ),
+                                    what: Tables(
+                                        [
+                                            Table(
+                                                "user",
+                                            ),
+                                        ],
+                                    ),
+                                    cond: None,
+                                    split: None,
+                                    group: None,
+                                    order: None,
+                                    limit: None,
+                                    start: None,
+                                    alias: None,
+                                },
+                            ),
+                            All,
+                        ],
+                    ),
+                ),
+                alias: Some(
+                    Idiom(
+                        [
+                            Field(
+                                Ident(
+                                    "friends",
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
             },
         ],
         false,
@@ -232,619 +154,551 @@ SelectStatement {
     explain: None,
 }
 
-Available tables: 
-[
-    TableDefinition {
-        name: "user",
-        permissions: Permissions {
+Analyzing idiom: Idiom([Field(Ident("name"))])
+Available tables: ["user", "friend"]
+Checking table: Table(Table("user"))
+Found table: Table(Table("user"))
+Table query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Traversing object with idiom: Idiom([Field(Ident("name"))])
+Initial query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Checking part: Field(Ident("name"))
+Current type is Object with fields: ["age", "height", "profile_picture", "tags", "name", "address", "balance", "created_at"]
+Found field: "name"
+Final current_type: Scalar(String)
+Analyzing idiom: Idiom([Field(Ident("age"))])
+Available tables: ["user", "friend"]
+Checking table: Table(Table("user"))
+Found table: Table(Table("user"))
+Table query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Traversing object with idiom: Idiom([Field(Ident("age"))])
+Initial query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Checking part: Field(Ident("age"))
+Current type is Object with fields: ["age", "height", "profile_picture", "tags", "name", "address", "balance", "created_at"]
+Found field: "age"
+Final current_type: Scalar(Int)
+Analyzing idiom: Idiom([Field(Ident("address"))])
+Available tables: ["user", "friend"]
+Checking table: Table(Table("user"))
+Found table: Table(Table("user"))
+Table query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Traversing object with idiom: Idiom([Field(Ident("address"))])
+Initial query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Checking part: Field(Ident("address"))
+Current type is Object with fields: ["age", "height", "profile_picture", "tags", "name", "address", "balance", "created_at"]
+Found field: "address"
+Final current_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Analyzing idiom: Idiom([Graph(Graph { dir: Out, expr: Fields([All], false), what: Tables([Table("friend")]), cond: None, split: None, group: None, order: None, limit: None, start: None, alias: None }), Graph(Graph { dir: Out, expr: Fields([All], false), what: Tables([Table("user")]), cond: None, split: None, group: None, order: None, limit: None, start: None, alias: None }), All])
+Available tables: ["user", "friend"]
+Checking table: Table(Table("user"))
+Found table: Table(Table("user"))
+Table query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Traversing object with idiom: Idiom([All])
+Initial query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
+Checking part: All
+Current type is Object with fields: ["age", "height", "profile_picture", "tags", "name", "address", "balance", "created_at"]
+For SELECT query, constructed typed query: {
+    "name": TypedQuery {
+        query_type: Scalar(
+            String,
+        ),
+        perms: Permissions {
             select: None,
             create: None,
             update: None,
             delete: None,
         },
-        fields: [
-            FieldDefinition {
-                name: "name",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "age",
-                field_type: Inline(
-                    Int,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "created_at",
-                field_type: Inline(
-                    Datetime,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "id",
-                field_type: Inline(
-                    Uuid,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "balance",
-                field_type: Inline(
-                    Decimal,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "height",
-                field_type: Inline(
-                    Float,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "session_duration",
-                field_type: Inline(
-                    Duration,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "profile_picture",
-                field_type: Inline(
-                    Bytes,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "address",
-                field_type: Object(
-                    [
-                        FieldDefinition {
-                            name: "street",
-                            field_type: Inline(
-                                String,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
-                            },
-                            value: None,
-                        },
-                        FieldDefinition {
-                            name: "zip",
-                            field_type: Inline(
-                                Int,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
-                            },
-                            value: None,
-                        },
-                    ],
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "tags",
-                field_type: Array(
-                    (
-                        FieldDefinition {
-                            name: "*",
-                            field_type: Inline(
-                                String,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
-                            },
-                            value: None,
-                        },
-                        None,
-                    ),
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "fixed_tags",
-                field_type: Array(
-                    (
-                        FieldDefinition {
-                            name: "*",
-                            field_type: Inline(
-                                Any,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
-                            },
-                            value: None,
-                        },
-                        None,
-                    ),
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "status",
-                field_type: Inline(
-                    Option(
+    },
+    "addy": TypedQuery {
+        query_type: Object(
+            {
+                "city": TypedQuery {
+                    query_type: Scalar(
                         String,
                     ),
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
-            },
-            FieldDefinition {
-                name: "account_type",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "location",
-                field_type: Inline(
-                    Geometry(
-                        [
-                            "point",
-                        ],
+                "state": TypedQuery {
+                    query_type: Scalar(
+                        String,
                     ),
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
-            },
-            FieldDefinition {
-                name: "friends",
-                field_type: Array(
-                    (
-                        FieldDefinition {
-                            name: "*",
-                            field_type: Inline(
-                                String,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
-                            },
-                            value: None,
-                        },
-                        None,
+                "zip": TypedQuery {
+                    query_type: Scalar(
+                        Int,
                     ),
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
-            },
-            FieldDefinition {
-                name: "favorite_numbers",
-                field_type: Array(
-                    (
-                        FieldDefinition {
-                            name: "*",
-                            field_type: Inline(
-                                Int,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
-                            },
-                            value: None,
-                        },
-                        None,
+                "street": TypedQuery {
+                    query_type: Scalar(
+                        String,
                     ),
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
             },
-            FieldDefinition {
-                name: "email",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "country_code",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-        ],
-    },
-    TableDefinition {
-        name: "post",
-        permissions: Permissions {
+        ),
+        perms: Permissions {
             select: None,
             create: None,
             update: None,
             delete: None,
         },
-        fields: [
-            FieldDefinition {
-                name: "title",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+    },
+    "age": TypedQuery {
+        query_type: Scalar(
+            Int,
+        ),
+        perms: Permissions {
+            select: None,
+            create: None,
+            update: None,
+            delete: None,
+        },
+    },
+    "friends": TypedQuery {
+        query_type: Object(
+            {
+                "age": TypedQuery {
+                    query_type: Scalar(
+                        Int,
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
-            },
-            FieldDefinition {
-                name: "content",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+                "height": TypedQuery {
+                    query_type: Scalar(
+                        Float,
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
-            },
-            FieldDefinition {
-                name: "tags",
-                field_type: Array(
-                    (
-                        FieldDefinition {
-                            name: "*",
-                            field_type: Inline(
-                                String,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
+                "profile_picture": TypedQuery {
+                    query_type: Scalar(
+                        Bytes,
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
+                },
+                "tags": TypedQuery {
+                    query_type: Array(
+                        Some(
+                            TypedQuery {
+                                query_type: Scalar(
+                                    String,
+                                ),
+                                perms: Permissions {
+                                    select: Full,
+                                    create: Full,
+                                    update: Full,
+                                    delete: Full,
+                                },
                             },
-                            value: None,
-                        },
+                        ),
                         None,
                     ),
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
-            },
-            FieldDefinition {
-                name: "published_at",
-                field_type: Inline(
-                    Datetime,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+                "name": TypedQuery {
+                    query_type: Scalar(
+                        String,
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
-            },
-            FieldDefinition {
-                name: "test",
-                field_type: Object(
-                    [
-                        FieldDefinition {
-                            name: "a",
-                            field_type: Inline(
-                                String,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
+                "address": TypedQuery {
+                    query_type: Object(
+                        {
+                            "city": TypedQuery {
+                                query_type: Scalar(
+                                    String,
+                                ),
+                                perms: Permissions {
+                                    select: Full,
+                                    create: Full,
+                                    update: Full,
+                                    delete: Full,
+                                },
                             },
-                            value: None,
-                        },
-                        FieldDefinition {
-                            name: "b",
-                            field_type: Inline(
-                                Number,
-                            ),
-                            permissions: Permissions {
-                                select: Full,
-                                create: Full,
-                                update: Full,
-                                delete: Full,
+                            "state": TypedQuery {
+                                query_type: Scalar(
+                                    String,
+                                ),
+                                perms: Permissions {
+                                    select: Full,
+                                    create: Full,
+                                    update: Full,
+                                    delete: Full,
+                                },
                             },
-                            value: None,
+                            "zip": TypedQuery {
+                                query_type: Scalar(
+                                    Int,
+                                ),
+                                perms: Permissions {
+                                    select: Full,
+                                    create: Full,
+                                    update: Full,
+                                    delete: Full,
+                                },
+                            },
+                            "street": TypedQuery {
+                                query_type: Scalar(
+                                    String,
+                                ),
+                                perms: Permissions {
+                                    select: Full,
+                                    create: Full,
+                                    update: Full,
+                                    delete: Full,
+                                },
+                            },
                         },
-                    ],
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
                 },
-                value: None,
+                "balance": TypedQuery {
+                    query_type: Scalar(
+                        Decimal,
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
+                },
+                "created_at": TypedQuery {
+                    query_type: Scalar(
+                        Datetime,
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
+                },
             },
-        ],
-    },
-    TableDefinition {
-        name: "comment",
-        permissions: Permissions {
+        ),
+        perms: Permissions {
             select: None,
             create: None,
             update: None,
             delete: None,
         },
-        fields: [
-            FieldDefinition {
-                name: "content",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "created_at",
-                field_type: Inline(
-                    Datetime,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "likes",
-                field_type: Inline(
-                    Int,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-        ],
     },
-    TableDefinition {
-        name: "product",
-        permissions: Permissions {
+}
+Got result: 
+[
+    TypedQuery {
+        query_type: Array(
+            Some(
+                TypedQuery {
+                    query_type: Object(
+                        {
+                            "name": TypedQuery {
+                                query_type: Scalar(
+                                    String,
+                                ),
+                                perms: Permissions {
+                                    select: None,
+                                    create: None,
+                                    update: None,
+                                    delete: None,
+                                },
+                            },
+                            "addy": TypedQuery {
+                                query_type: Object(
+                                    {
+                                        "city": TypedQuery {
+                                            query_type: Scalar(
+                                                String,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "state": TypedQuery {
+                                            query_type: Scalar(
+                                                String,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "zip": TypedQuery {
+                                            query_type: Scalar(
+                                                Int,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "street": TypedQuery {
+                                            query_type: Scalar(
+                                                String,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                    },
+                                ),
+                                perms: Permissions {
+                                    select: None,
+                                    create: None,
+                                    update: None,
+                                    delete: None,
+                                },
+                            },
+                            "age": TypedQuery {
+                                query_type: Scalar(
+                                    Int,
+                                ),
+                                perms: Permissions {
+                                    select: None,
+                                    create: None,
+                                    update: None,
+                                    delete: None,
+                                },
+                            },
+                            "friends": TypedQuery {
+                                query_type: Object(
+                                    {
+                                        "age": TypedQuery {
+                                            query_type: Scalar(
+                                                Int,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "height": TypedQuery {
+                                            query_type: Scalar(
+                                                Float,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "profile_picture": TypedQuery {
+                                            query_type: Scalar(
+                                                Bytes,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "tags": TypedQuery {
+                                            query_type: Array(
+                                                Some(
+                                                    TypedQuery {
+                                                        query_type: Scalar(
+                                                            String,
+                                                        ),
+                                                        perms: Permissions {
+                                                            select: Full,
+                                                            create: Full,
+                                                            update: Full,
+                                                            delete: Full,
+                                                        },
+                                                    },
+                                                ),
+                                                None,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "name": TypedQuery {
+                                            query_type: Scalar(
+                                                String,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "address": TypedQuery {
+                                            query_type: Object(
+                                                {
+                                                    "city": TypedQuery {
+                                                        query_type: Scalar(
+                                                            String,
+                                                        ),
+                                                        perms: Permissions {
+                                                            select: Full,
+                                                            create: Full,
+                                                            update: Full,
+                                                            delete: Full,
+                                                        },
+                                                    },
+                                                    "state": TypedQuery {
+                                                        query_type: Scalar(
+                                                            String,
+                                                        ),
+                                                        perms: Permissions {
+                                                            select: Full,
+                                                            create: Full,
+                                                            update: Full,
+                                                            delete: Full,
+                                                        },
+                                                    },
+                                                    "zip": TypedQuery {
+                                                        query_type: Scalar(
+                                                            Int,
+                                                        ),
+                                                        perms: Permissions {
+                                                            select: Full,
+                                                            create: Full,
+                                                            update: Full,
+                                                            delete: Full,
+                                                        },
+                                                    },
+                                                    "street": TypedQuery {
+                                                        query_type: Scalar(
+                                                            String,
+                                                        ),
+                                                        perms: Permissions {
+                                                            select: Full,
+                                                            create: Full,
+                                                            update: Full,
+                                                            delete: Full,
+                                                        },
+                                                    },
+                                                },
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "balance": TypedQuery {
+                                            query_type: Scalar(
+                                                Decimal,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                        "created_at": TypedQuery {
+                                            query_type: Scalar(
+                                                Datetime,
+                                            ),
+                                            perms: Permissions {
+                                                select: Full,
+                                                create: Full,
+                                                update: Full,
+                                                delete: Full,
+                                            },
+                                        },
+                                    },
+                                ),
+                                perms: Permissions {
+                                    select: None,
+                                    create: None,
+                                    update: None,
+                                    delete: None,
+                                },
+                            },
+                        },
+                    ),
+                    perms: Permissions {
+                        select: None,
+                        create: None,
+                        update: None,
+                        delete: None,
+                    },
+                },
+            ),
+            None,
+        ),
+        perms: Permissions {
             select: None,
             create: None,
             update: None,
             delete: None,
         },
-        fields: [
-            FieldDefinition {
-                name: "name",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "price",
-                field_type: Inline(
-                    Decimal,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "category",
-                field_type: Inline(
-                    String,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "in_stock",
-                field_type: Inline(
-                    Bool,
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-            FieldDefinition {
-                name: "dimensions",
-                field_type: Object(
-                    [],
-                ),
-                permissions: Permissions {
-                    select: Full,
-                    create: Full,
-                    update: Full,
-                    delete: Full,
-                },
-                value: None,
-            },
-        ],
     },
 ]
 
-Looking for table: user
-Found table: TableDefinition { name: "user", permissions: Permissions { select: None, create: None, update: None, delete: None }, fields: [FieldDefinition { name: "name", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "age", field_type: Inline(Int), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "created_at", field_type: Inline(Datetime), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "id", field_type: Inline(Uuid), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "balance", field_type: Inline(Decimal), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "height", field_type: Inline(Float), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "session_duration", field_type: Inline(Duration), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "profile_picture", field_type: Inline(Bytes), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "address", field_type: Object([FieldDefinition { name: "street", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "zip", field_type: Inline(Int), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }]), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "tags", field_type: Array((FieldDefinition { name: "*", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "fixed_tags", field_type: Array((FieldDefinition { name: "*", field_type: Inline(Any), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "status", field_type: Inline(Option(String)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "account_type", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "location", field_type: Inline(Geometry(["point"])), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "friends", field_type: Array((FieldDefinition { name: "*", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "favorite_numbers", field_type: Array((FieldDefinition { name: "*", field_type: Inline(Int), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, None)), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "email", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }, FieldDefinition { name: "country_code", field_type: Inline(String), permissions: Permissions { select: Full, create: Full, update: Full, delete: Full }, value: None }] }
-Creating QueryType from table: user
-Creating QueryType from field: name
-Creating QueryType from field: age
-Creating QueryType from field: created_at
-Creating QueryType from field: id
-Creating QueryType from field: balance
-Creating QueryType from field: height
-Creating QueryType from field: session_duration
-Creating QueryType from field: profile_picture
-Creating QueryType from field: address
-Creating QueryType from field: street
-Creating QueryType from field: zip
-Creating QueryType from field: tags
-Creating QueryType from field: *
-Creating QueryType from field: fixed_tags
-Creating QueryType from field: *
-Creating QueryType from field: status
-Creating QueryType from field: account_type
-Creating QueryType from field: location
-Creating QueryType from field: friends
-Creating QueryType from field: *
-Creating QueryType from field: favorite_numbers
-Creating QueryType from field: *
-Creating QueryType from field: email
-Creating QueryType from field: country_code
 #![feature(prelude_import)]
 #[prelude_import]
 use std::prelude::rust_2021::*;
@@ -853,11 +707,6 @@ extern crate std;
 use dotenv::dotenv;
 use surrealix_macros::query;
 fn main() {
-    dotenv().ok();
-    std::env::set_var("SURREALIX_SCHEMA_PATH", "./schema.srql");
-    let results = {
-        pub struct UserResult {
-            pub height: f64,
-        }
-    };
+    let myUser;
+    let results = "SELECT name, age, address as addy, ->friend->user.* as friends FROM user;";
 }

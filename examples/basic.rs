@@ -2,7 +2,9 @@ use dotenv::dotenv;
 use surrealix_macros::query;
 
 fn main() {
+    let myUser;
+
     let results = query! {
-        SELECT address.zip FROM user;
+       SELECT name, age, address as addy, ->friend->user.* as friends FROM user;
     };
 }

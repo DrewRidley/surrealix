@@ -2929,9 +2929,9 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "surrealdb"
-version = "1.5.3"
+version = "1.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31819be880ed2c134afc1350dc29c22b1f1d9b93715d25eac07ba65677235eed"
+checksum = "430b7d33686ece41796236416707398574da147f78c6b4e5dc9a10592907029b"
 dependencies = [
  "async-channel",
  "bincode",
@@ -2954,7 +2954,7 @@ dependencies = [
  "serde",
  "serde_json",
  "surrealdb-core 1.5.0",
- "surrealdb-core 2.0.0-1.5.3",
+ "surrealdb-core 2.0.0-1.5.4",
  "thiserror",
  "tokio",
  "tokio-tungstenite",
@@ -3039,9 +3039,9 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-core"
-version = "2.0.0-1.5.3"
+version = "2.0.0-1.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fce39d305d5ef3f81bf4e08b97675bb00b90d0a72df2dc952af0fa98c405e19"
+checksum = "4da0070ee77cc4a6938000a365c3c2cf0233708d2ac16feb680a6d90a3535025"
 dependencies = [
  "addr",
  "ahash 0.8.11",
@@ -3158,6 +3158,7 @@ dependencies = [
  "surrealdb",
  "surrealix-core",
  "surrealix-macros",
+ "thiserror",
  "uuid",
 ]
 
@@ -3165,11 +3166,8 @@ dependencies = [
 name = "surrealix-core"
 version = "0.1.0"
 dependencies = [
- "convert_case",
- "proc-macro2",
- "quote",
  "surrealdb",
- "tokio",
+ "thiserror",
 ]
 
 [[package]]
@@ -3266,18 +3264,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.61"
+version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c546c80d6be4bc6a00c0f01730c08df82eaa7a7a61f11d656526506112cc1709"
+checksum = "c0342370b38b6a11b6cc11d6a805569958d54cfa061a29969c3b5ce2ea405724"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.61"
+version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46c3384250002a6d5af4d114f2845d37b57521033f30d5c3f46c4d70e1197533"
+checksum = "a4558b58466b9ad7ca0f102865eccc95938dca1a74a856f2b57b6629050da261"
 dependencies = [
  "proc-macro2",
  "quote",

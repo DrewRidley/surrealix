@@ -10,12 +10,13 @@ use std::path::PathBuf;
 use surrealdb::engine::remote::http::Http;
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
+use surrealix_core::analyzer::analyze;
+use surrealix_core::schema::parse_schema;
 use syn::parse::ParseStream;
+use syn::spanned::Spanned;
 use syn::{parse::Parse, parse_macro_input};
 use thiserror::Error;
 use tokio::runtime::Runtime;
-use syn::spanned::Spanned;
-mod types;
 
 #[derive(Error, Debug)]
 enum SchemaError {
@@ -54,48 +55,6 @@ fn load_env() -> Result<(), SchemaError> {
 
 fn fetch_schema() -> Result<String, SchemaError> {
     load_env()?;
-
-    #[cfg(debug_assertions)]
-    {
-        // In debug mode, try to fetch from DB first, then fallback to schema file
-        if let Ok(db_url) = env::var("SURREALIX_DB_URL") {
-            let runtime = Runtime::new().map_err(SchemaError::RuntimeCreationError)?;
-            return runtime.block_on(async {
-                let ns = env::var("SURREALIX_NAMESPACE")
-                    .map_err(|_| SchemaError::EnvVarNotSet("SURREALIX_NAMESPACE".to_string()))?;
-                let db_name = env::var("SURREALIX_DB")
-                    .map_err(|_| SchemaError::EnvVarNotSet("SURREALIX_DB".to_string()))?;
-                let username = env::var("SURREALIX_USER")
-                    .map_err(|_| SchemaError::EnvVarNotSet("SURREALIX_USER".to_string()))?;
-                let password = env::var("SURREALIX_PASS")
-                    .map_err(|_| SchemaError::EnvVarNotSet("SURREALIX_PASS".to_string()))?;
-
-                // Connect to the database
-                let db = Surreal::new::<Http>(db_url)
-                    .await
-                    .map_err(SchemaError::DatabaseConnectionError)?;
-                db.use_ns(&ns)
-                    .use_db(&db_name)
-                    .await
-                    .map_err(SchemaError::DatabaseConnectionError)?;
-
-                // Sign in
-                db.signin(Root {
-                    username: &username,
-                    password: &password,
-                })
-                .await
-                .map_err(SchemaError::DatabaseConnectionError)?;
-
-                let mut result = db
-                    .query("INFO FOR DB")
-                    .await
-                    .map_err(SchemaError::DatabaseConnectionError)?;
-                let schema = result.take(0).map_err(|_| SchemaError::SchemaParseError)?;
-                Ok(parse_db_schema(schema))
-            });
-        }
-    }
 
     // Fallback to schema file in debug mode, or primary method in release mode
     let path = env::var("SURREALIX_SCHEMA_PATH")
@@ -146,12 +105,16 @@ impl Parse for QueryInput {
 
 #[proc_macro]
 pub fn query(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as QueryInput);
+    let input = TokenStream2::from(input);
+    let query = input.to_string();
+
+    // Remove any leading/trailing whitespace and extra spaces
+    let query = query.split_whitespace().collect::<Vec<&str>>().join(" ");
+
+    println!("Query string: {:?}", query);
+
     let schema = match fetch_schema() {
-        Ok(schema) => {
-            println!("Fetched schema:\n{}", schema);
-            schema
-        }
+        Ok(schema) => schema,
         Err(e) => {
             let error_message = e.to_string();
             return TokenStream::from(quote! {
@@ -160,67 +123,14 @@ pub fn query(input: TokenStream) -> TokenStream {
         }
     };
 
-    let query_strings: Vec<String> = input
-        .queries
-        .iter()
-        .map(|item| {
-            let query = item.content.to_string();
-            query.trim_matches(|c: char| c.is_whitespace() || c == ';').to_string()
-        })
-        .collect();
+    // Parse schema into definitions.
+    let tables = parse_schema(&schema).unwrap();
 
-    let spans: Vec<proc_macro::Span> = input.queries.iter().map(|item| item.span).collect();
+    let res = analyze(tables, query.clone());
+    println!("Got result: \n{:#?}\n", res);
 
-    // Extract template parameters
-    let template_params: Vec<String> = input
-        .queries
-        .iter()
-        .flat_map(|item| {
-            item.content
-                .to_string()
-                .split_whitespace()
-                .filter(|&word| word.starts_with('{') && word.ends_with('}'))
-                .map(|word| word[1..word.len() - 1].to_string())
-                .collect::<Vec<_>>()
-        })
-        .collect();
-
-    let validation_result = surrealix_core::validate_queries(&schema, &query_strings);
-
-    match validation_result {
-        Err(errors) => {
-            for error in errors {
-                let span = spans[error.idx];
-                proc_macro::Diagnostic::spanned(span, proc_macro::Level::Error, &error.message)
-                    .emit();
-            }
-            // Return an empty token stream if there are errors
-            return TokenStream::new();
-        }
-        Ok(generated_types) => {
-            let template_param_idents: Vec<TokenStream2> = template_params
-                .iter()
-                .map(|param| {
-                    let ident = syn::Ident::new(param, proc_macro2::Span::call_site());
-                    quote! { #ident }
-                })
-                .collect();
-
-            quote! {
-                {
-                    #(#generated_types)*
-
-                    // // Generate a function that takes the template parameters
-                    // fn execute_query(#(#template_param_idents: impl serde::Serialize,)*) -> impl std::future::Future<Output = Result<(), surrealdb::Error>> {
-                    //     async move {
-                    //         // Here you would use the template_param_idents to construct your query
-                    //         // For now, this is just a placeholder
-                    //         Ok(())
-                    //     }
-                    // }
-                }
-            }
-            .into()
-        }
+    quote! {
+        #query
     }
+    .into()
 }

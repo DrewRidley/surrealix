@@ -7,7 +7,6 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-surrealix-core = { path = "../surrealix-core" }
 syn = { version = "1.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
@@ -15,3 +14,4 @@ surrealdb = { version = "1.0.0", features = ["kv-mem", "protocol-http"] }
 tokio = { version = "1.0", features = ["full"] }
 thiserror = "1.0.61"
 dotenv = "0.15.0"
+surrealix-core = { version = "0.1.0", path = "../surrealix-core" }
