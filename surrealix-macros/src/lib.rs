@@ -11,6 +11,7 @@ use surrealdb::engine::remote::http::Http;
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 use surrealix_core::analyzer::analyze;
+use surrealix_core::code_generator::generate_code;
 use surrealix_core::schema::parse_schema;
 use syn::parse::ParseStream;
 use syn::spanned::Spanned;
@@ -74,15 +75,18 @@ fn fetch_schema() -> Result<String, SchemaError> {
 }
 
 struct QueryItem {
-    content: proc_macro2::TokenStream,
+    content: String,
     span: proc_macro::Span,
 }
 
 impl Parse for QueryItem {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
-        let content: proc_macro2::TokenStream = input.parse()?;
-        let span = content.span().unwrap();
-        Ok(QueryItem { content, span })
+        let content: syn::LitStr = input.parse()?;
+        let span = content.span();
+        Ok(QueryItem {
+            content: content.value(),
+            span: span.unwrap(),
+        })
     }
 }
 
@@ -105,11 +109,8 @@ impl Parse for QueryInput {
 
 #[proc_macro]
 pub fn query(input: TokenStream) -> TokenStream {
-    let input = TokenStream2::from(input);
-    let query = input.to_string();
-
-    // Remove any leading/trailing whitespace and extra spaces
-    let query = query.split_whitespace().collect::<Vec<&str>>().join(" ");
+    let input = parse_macro_input!(input as QueryItem);
+    let query = input.content;
 
     println!("Query string: {:?}", query);
 
@@ -127,10 +128,14 @@ pub fn query(input: TokenStream) -> TokenStream {
     let tables = parse_schema(&schema).unwrap();
 
     let res = analyze(tables, query.clone());
-    println!("Got result: \n{:#?}\n", res);
+    let generated_code = generate_code(res);
 
     quote! {
-        #query
+        {
+            #generated_code
+
+            ()
+        }
     }
     .into()
 }

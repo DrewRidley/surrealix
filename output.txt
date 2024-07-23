@@ -1,131 +1,10 @@
-Query string: "SELECT name, age, address as addy, ->friend->user.* as friends FROM user;"
-Query string: ["SELECT name, age, address as addy, ->friend->user.* as friends FROM user;"]
+Query string: "\n            SELECT * FROM user FETCH posts;\n       "
+Query string: ["\n            SELECT * FROM user FETCH posts;\n       "]
 Analyzing select statement: 
 SelectStatement {
     expr: Fields(
         [
-            Single {
-                expr: Idiom(
-                    Idiom(
-                        [
-                            Field(
-                                Ident(
-                                    "name",
-                                ),
-                            ),
-                        ],
-                    ),
-                ),
-                alias: None,
-            },
-            Single {
-                expr: Idiom(
-                    Idiom(
-                        [
-                            Field(
-                                Ident(
-                                    "age",
-                                ),
-                            ),
-                        ],
-                    ),
-                ),
-                alias: None,
-            },
-            Single {
-                expr: Idiom(
-                    Idiom(
-                        [
-                            Field(
-                                Ident(
-                                    "address",
-                                ),
-                            ),
-                        ],
-                    ),
-                ),
-                alias: Some(
-                    Idiom(
-                        [
-                            Field(
-                                Ident(
-                                    "addy",
-                                ),
-                            ),
-                        ],
-                    ),
-                ),
-            },
-            Single {
-                expr: Idiom(
-                    Idiom(
-                        [
-                            Graph(
-                                Graph {
-                                    dir: Out,
-                                    expr: Fields(
-                                        [
-                                            All,
-                                        ],
-                                        false,
-                                    ),
-                                    what: Tables(
-                                        [
-                                            Table(
-                                                "friend",
-                                            ),
-                                        ],
-                                    ),
-                                    cond: None,
-                                    split: None,
-                                    group: None,
-                                    order: None,
-                                    limit: None,
-                                    start: None,
-                                    alias: None,
-                                },
-                            ),
-                            Graph(
-                                Graph {
-                                    dir: Out,
-                                    expr: Fields(
-                                        [
-                                            All,
-                                        ],
-                                        false,
-                                    ),
-                                    what: Tables(
-                                        [
-                                            Table(
-                                                "user",
-                                            ),
-                                        ],
-                                    ),
-                                    cond: None,
-                                    split: None,
-                                    group: None,
-                                    order: None,
-                                    limit: None,
-                                    start: None,
-                                    alias: None,
-                                },
-                            ),
-                            All,
-                        ],
-                    ),
-                ),
-                alias: Some(
-                    Idiom(
-                        [
-                            Field(
-                                Ident(
-                                    "friends",
-                                ),
-                            ),
-                        ],
-                    ),
-                ),
-            },
+            All,
         ],
         false,
     ),
@@ -147,92 +26,120 @@ SelectStatement {
     order: None,
     limit: None,
     start: None,
-    fetch: None,
+    fetch: Some(
+        Fetchs(
+            [
+                Fetch(
+                    Idiom(
+                        [
+                            Field(
+                                Ident(
+                                    "posts",
+                                ),
+                            ),
+                        ],
+                    ),
+                ),
+            ],
+        ),
+    ),
     version: None,
     timeout: None,
     parallel: false,
     explain: None,
 }
 
-Analyzing idiom: Idiom([Field(Ident("name"))])
-Available tables: ["user", "friend"]
-Checking table: Table(Table("user"))
-Found table: Table(Table("user"))
-Table query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Traversing object with idiom: Idiom([Field(Ident("name"))])
-Initial query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Checking part: Field(Ident("name"))
-Current type is Object with fields: ["age", "height", "profile_picture", "tags", "name", "address", "balance", "created_at"]
-Found field: "name"
-Final current_type: Scalar(String)
-Analyzing idiom: Idiom([Field(Ident("age"))])
-Available tables: ["user", "friend"]
-Checking table: Table(Table("user"))
-Found table: Table(Table("user"))
-Table query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Traversing object with idiom: Idiom([Field(Ident("age"))])
-Initial query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Checking part: Field(Ident("age"))
-Current type is Object with fields: ["age", "height", "profile_picture", "tags", "name", "address", "balance", "created_at"]
-Found field: "age"
-Final current_type: Scalar(Int)
-Analyzing idiom: Idiom([Field(Ident("address"))])
-Available tables: ["user", "friend"]
-Checking table: Table(Table("user"))
-Found table: Table(Table("user"))
-Table query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Traversing object with idiom: Idiom([Field(Ident("address"))])
-Initial query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Checking part: Field(Ident("address"))
-Current type is Object with fields: ["age", "height", "profile_picture", "tags", "name", "address", "balance", "created_at"]
-Found field: "address"
-Final current_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Analyzing idiom: Idiom([Graph(Graph { dir: Out, expr: Fields([All], false), what: Tables([Table("friend")]), cond: None, split: None, group: None, order: None, limit: None, start: None, alias: None }), Graph(Graph { dir: Out, expr: Fields([All], false), what: Tables([Table("user")]), cond: None, split: None, group: None, order: None, limit: None, start: None, alias: None }), All])
-Available tables: ["user", "friend"]
-Checking table: Table(Table("user"))
-Found table: Table(Table("user"))
-Table query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Traversing object with idiom: Idiom([All])
-Initial query_type: Object({"age": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "height": TypedQuery { query_type: Scalar(Float), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "profile_picture": TypedQuery { query_type: Scalar(Bytes), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "tags": TypedQuery { query_type: Array(Some(TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }), None), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "name": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "address": TypedQuery { query_type: Object({"city": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "state": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "zip": TypedQuery { query_type: Scalar(Int), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "street": TypedQuery { query_type: Scalar(String), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }}), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "balance": TypedQuery { query_type: Scalar(Decimal), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }, "created_at": TypedQuery { query_type: Scalar(Datetime), perms: Permissions { select: Full, create: Full, update: Full, delete: Full } }})
-Checking part: All
-Current type is Object with fields: ["age", "height", "profile_picture", "tags", "name", "address", "balance", "created_at"]
 For SELECT query, constructed typed query: {
+    "posts": TypedQuery {
+        query_type: Array(
+            Some(
+                TypedQuery {
+                    query_type: Scalar(
+                        Record(
+                            [
+                                Table(
+                                    "post",
+                                ),
+                            ],
+                        ),
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
+                },
+            ),
+            None,
+        ),
+        perms: Permissions {
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
+        },
+    },
+    "height": TypedQuery {
+        query_type: Scalar(
+            Float,
+        ),
+        perms: Permissions {
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
+        },
+    },
     "name": TypedQuery {
         query_type: Scalar(
             String,
         ),
         perms: Permissions {
-            select: None,
-            create: None,
-            update: None,
-            delete: None,
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
         },
     },
-    "addy": TypedQuery {
+    "tags": TypedQuery {
+        query_type: Array(
+            Some(
+                TypedQuery {
+                    query_type: Scalar(
+                        String,
+                    ),
+                    perms: Permissions {
+                        select: Full,
+                        create: Full,
+                        update: Full,
+                        delete: Full,
+                    },
+                },
+            ),
+            None,
+        ),
+        perms: Permissions {
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
+        },
+    },
+    "balance": TypedQuery {
+        query_type: Scalar(
+            Decimal,
+        ),
+        perms: Permissions {
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
+        },
+    },
+    "address": TypedQuery {
         query_type: Object(
             {
-                "city": TypedQuery {
-                    query_type: Scalar(
-                        String,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "state": TypedQuery {
-                    query_type: Scalar(
-                        String,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
                 "zip": TypedQuery {
                     query_type: Scalar(
                         Int,
@@ -255,87 +162,7 @@ For SELECT query, constructed typed query: {
                         delete: Full,
                     },
                 },
-            },
-        ),
-        perms: Permissions {
-            select: None,
-            create: None,
-            update: None,
-            delete: None,
-        },
-    },
-    "age": TypedQuery {
-        query_type: Scalar(
-            Int,
-        ),
-        perms: Permissions {
-            select: None,
-            create: None,
-            update: None,
-            delete: None,
-        },
-    },
-    "friends": TypedQuery {
-        query_type: Object(
-            {
-                "age": TypedQuery {
-                    query_type: Scalar(
-                        Int,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "height": TypedQuery {
-                    query_type: Scalar(
-                        Float,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "profile_picture": TypedQuery {
-                    query_type: Scalar(
-                        Bytes,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "tags": TypedQuery {
-                    query_type: Array(
-                        Some(
-                            TypedQuery {
-                                query_type: Scalar(
-                                    String,
-                                ),
-                                perms: Permissions {
-                                    select: Full,
-                                    create: Full,
-                                    update: Full,
-                                    delete: Full,
-                                },
-                            },
-                        ),
-                        None,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "name": TypedQuery {
+                "state": TypedQuery {
                     query_type: Scalar(
                         String,
                     ),
@@ -346,76 +173,9 @@ For SELECT query, constructed typed query: {
                         delete: Full,
                     },
                 },
-                "address": TypedQuery {
-                    query_type: Object(
-                        {
-                            "city": TypedQuery {
-                                query_type: Scalar(
-                                    String,
-                                ),
-                                perms: Permissions {
-                                    select: Full,
-                                    create: Full,
-                                    update: Full,
-                                    delete: Full,
-                                },
-                            },
-                            "state": TypedQuery {
-                                query_type: Scalar(
-                                    String,
-                                ),
-                                perms: Permissions {
-                                    select: Full,
-                                    create: Full,
-                                    update: Full,
-                                    delete: Full,
-                                },
-                            },
-                            "zip": TypedQuery {
-                                query_type: Scalar(
-                                    Int,
-                                ),
-                                perms: Permissions {
-                                    select: Full,
-                                    create: Full,
-                                    update: Full,
-                                    delete: Full,
-                                },
-                            },
-                            "street": TypedQuery {
-                                query_type: Scalar(
-                                    String,
-                                ),
-                                perms: Permissions {
-                                    select: Full,
-                                    create: Full,
-                                    update: Full,
-                                    delete: Full,
-                                },
-                            },
-                        },
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "balance": TypedQuery {
+                "city": TypedQuery {
                     query_type: Scalar(
-                        Decimal,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "created_at": TypedQuery {
-                    query_type: Scalar(
-                        Datetime,
+                        String,
                     ),
                     perms: Permissions {
                         select: Full,
@@ -427,278 +187,57 @@ For SELECT query, constructed typed query: {
             },
         ),
         perms: Permissions {
-            select: None,
-            create: None,
-            update: None,
-            delete: None,
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
+        },
+    },
+    "profile_picture": TypedQuery {
+        query_type: Scalar(
+            Bytes,
+        ),
+        perms: Permissions {
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
+        },
+    },
+    "age": TypedQuery {
+        query_type: Scalar(
+            Int,
+        ),
+        perms: Permissions {
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
+        },
+    },
+    "ssn": TypedQuery {
+        query_type: Scalar(
+            String,
+        ),
+        perms: Permissions {
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
+        },
+    },
+    "created_at": TypedQuery {
+        query_type: Scalar(
+            Datetime,
+        ),
+        perms: Permissions {
+            select: Full,
+            create: Full,
+            update: Full,
+            delete: Full,
         },
     },
 }
-Got result: 
-[
-    TypedQuery {
-        query_type: Array(
-            Some(
-                TypedQuery {
-                    query_type: Object(
-                        {
-                            "name": TypedQuery {
-                                query_type: Scalar(
-                                    String,
-                                ),
-                                perms: Permissions {
-                                    select: None,
-                                    create: None,
-                                    update: None,
-                                    delete: None,
-                                },
-                            },
-                            "addy": TypedQuery {
-                                query_type: Object(
-                                    {
-                                        "city": TypedQuery {
-                                            query_type: Scalar(
-                                                String,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "state": TypedQuery {
-                                            query_type: Scalar(
-                                                String,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "zip": TypedQuery {
-                                            query_type: Scalar(
-                                                Int,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "street": TypedQuery {
-                                            query_type: Scalar(
-                                                String,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                    },
-                                ),
-                                perms: Permissions {
-                                    select: None,
-                                    create: None,
-                                    update: None,
-                                    delete: None,
-                                },
-                            },
-                            "age": TypedQuery {
-                                query_type: Scalar(
-                                    Int,
-                                ),
-                                perms: Permissions {
-                                    select: None,
-                                    create: None,
-                                    update: None,
-                                    delete: None,
-                                },
-                            },
-                            "friends": TypedQuery {
-                                query_type: Object(
-                                    {
-                                        "age": TypedQuery {
-                                            query_type: Scalar(
-                                                Int,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "height": TypedQuery {
-                                            query_type: Scalar(
-                                                Float,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "profile_picture": TypedQuery {
-                                            query_type: Scalar(
-                                                Bytes,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "tags": TypedQuery {
-                                            query_type: Array(
-                                                Some(
-                                                    TypedQuery {
-                                                        query_type: Scalar(
-                                                            String,
-                                                        ),
-                                                        perms: Permissions {
-                                                            select: Full,
-                                                            create: Full,
-                                                            update: Full,
-                                                            delete: Full,
-                                                        },
-                                                    },
-                                                ),
-                                                None,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "name": TypedQuery {
-                                            query_type: Scalar(
-                                                String,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "address": TypedQuery {
-                                            query_type: Object(
-                                                {
-                                                    "city": TypedQuery {
-                                                        query_type: Scalar(
-                                                            String,
-                                                        ),
-                                                        perms: Permissions {
-                                                            select: Full,
-                                                            create: Full,
-                                                            update: Full,
-                                                            delete: Full,
-                                                        },
-                                                    },
-                                                    "state": TypedQuery {
-                                                        query_type: Scalar(
-                                                            String,
-                                                        ),
-                                                        perms: Permissions {
-                                                            select: Full,
-                                                            create: Full,
-                                                            update: Full,
-                                                            delete: Full,
-                                                        },
-                                                    },
-                                                    "zip": TypedQuery {
-                                                        query_type: Scalar(
-                                                            Int,
-                                                        ),
-                                                        perms: Permissions {
-                                                            select: Full,
-                                                            create: Full,
-                                                            update: Full,
-                                                            delete: Full,
-                                                        },
-                                                    },
-                                                    "street": TypedQuery {
-                                                        query_type: Scalar(
-                                                            String,
-                                                        ),
-                                                        perms: Permissions {
-                                                            select: Full,
-                                                            create: Full,
-                                                            update: Full,
-                                                            delete: Full,
-                                                        },
-                                                    },
-                                                },
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "balance": TypedQuery {
-                                            query_type: Scalar(
-                                                Decimal,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                        "created_at": TypedQuery {
-                                            query_type: Scalar(
-                                                Datetime,
-                                            ),
-                                            perms: Permissions {
-                                                select: Full,
-                                                create: Full,
-                                                update: Full,
-                                                delete: Full,
-                                            },
-                                        },
-                                    },
-                                ),
-                                perms: Permissions {
-                                    select: None,
-                                    create: None,
-                                    update: None,
-                                    delete: None,
-                                },
-                            },
-                        },
-                    ),
-                    perms: Permissions {
-                        select: None,
-                        create: None,
-                        update: None,
-                        delete: None,
-                    },
-                },
-            ),
-            None,
-        ),
-        perms: Permissions {
-            select: None,
-            create: None,
-            update: None,
-            delete: None,
-        },
-    },
-]
-
 #![feature(prelude_import)]
 #[prelude_import]
 use std::prelude::rust_2021::*;
@@ -708,5 +247,51 @@ use dotenv::dotenv;
 use surrealix_macros::query;
 fn main() {
     let myUser;
-    let results = "SELECT name, age, address as addy, ->friend->user.* as friends FROM user;";
+    let results = {
+        struct PostsTypeItem {
+            #[serde(rename = "created_at")]
+            created_at: chrono::DateTime<chrono::Utc>,
+            #[serde(rename = "title")]
+            title: String,
+            #[serde(rename = "author")]
+            author: serde_json::Value,
+            #[serde(rename = "content")]
+            content: String,
+        }
+        struct AddressType {
+            #[serde(rename = "zip")]
+            zip: i64,
+            #[serde(rename = "street")]
+            street: String,
+            #[serde(rename = "state")]
+            state: String,
+            #[serde(rename = "city")]
+            city: String,
+        }
+        struct Query1ResultItem {
+            #[serde(rename = "posts")]
+            posts: Vec<PostsTypeItem>,
+            #[serde(rename = "height")]
+            height: f64,
+            #[serde(rename = "name")]
+            name: String,
+            #[serde(rename = "tags")]
+            tags: Vec<String>,
+            #[serde(rename = "balance")]
+            balance: serde_json::Value,
+            #[serde(rename = "address")]
+            address: AddressType,
+            #[serde(rename = "profile_picture")]
+            profile_picture: serde_json::Value,
+            #[serde(rename = "age")]
+            age: i64,
+            #[serde(rename = "ssn")]
+            ssn: String,
+            #[serde(rename = "created_at")]
+            created_at: chrono::DateTime<chrono::Utc>,
+        }
+        type Query1Result = Vec<Query1ResultItem>;
+        type FinalQueryResult = Query1Result;
+        ()
+    };
 }

@@ -1204,6 +1204,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
+name = "heck"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
 name = "hermit-abi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2812,7 +2818,7 @@ version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "990079665f075b699031e9c08fd3ab99be5029b96f3b78dc0709e8f77e4efebf"
 dependencies = [
- "heck",
+ "heck 0.4.1",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -3152,6 +3158,7 @@ dependencies = [
  "chrono",
  "convert_case",
  "dotenv",
+ "heck 0.5.0",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -3166,6 +3173,8 @@ dependencies = [
 name = "surrealix-core"
 version = "0.1.0"
 dependencies = [
+ "proc-macro2",
+ "quote",
  "surrealdb",
  "thiserror",
 ]

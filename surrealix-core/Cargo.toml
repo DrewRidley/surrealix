@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+proc-macro2 = "1.0.86"
+quote = "1.0.36"
 surrealdb = "1.5.4"
 thiserror = "1.0.63"
