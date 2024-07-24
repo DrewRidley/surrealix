@@ -1613,10 +1613,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "mini-internal"
+version = "0.1.39"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f28c501b91dabb672c4b303fb6ea259022ab21ed8d06a457ac21b70e479fb367"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.68",
+]
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
+name = "miniserde"
+version = "0.1.39"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd044c3b41ba1d92e3dbeef687ecfe5d1dcbd8b4fa1d33610f5ce5546ad6aac1"
+dependencies = [
+ "itoa",
+ "mini-internal",
+ "ryu",
+]
 
 [[package]]
 name = "miniz_oxide"
@@ -3159,6 +3181,7 @@ dependencies = [
  "convert_case",
  "dotenv",
  "heck 0.5.0",
+ "miniserde",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -3173,8 +3196,12 @@ dependencies = [
 name = "surrealix-core"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "miniserde",
  "proc-macro2",
  "quote",
+ "serde",
+ "serde_json",
  "surrealdb",
  "thiserror",
 ]
@@ -3184,8 +3211,11 @@ name = "surrealix-macros"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "miniserde",
  "proc-macro2",
  "quote",
+ "serde",
+ "serde_json",
  "surrealdb",
  "surrealix-core",
  "syn 1.0.109",

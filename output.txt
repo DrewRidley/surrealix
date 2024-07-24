@@ -1,297 +1,699 @@
-Query string: "\n            SELECT * FROM user FETCH posts;\n       "
-Query string: ["\n            SELECT * FROM user FETCH posts;\n       "]
-Analyzing select statement: 
-SelectStatement {
-    expr: Fields(
-        [
-            All,
-        ],
-        false,
-    ),
-    omit: None,
-    only: false,
-    what: Values(
-        [
-            Table(
-                Table(
-                    "user",
-                ),
-            ),
-        ],
-    ),
-    with: None,
-    cond: None,
-    split: None,
-    group: None,
-    order: None,
-    limit: None,
-    start: None,
-    fetch: Some(
-        Fetchs(
-            [
-                Fetch(
-                    Idiom(
-                        [
-                            Field(
-                                Ident(
-                                    "posts",
-                                ),
-                            ),
-                        ],
-                    ),
-                ),
-            ],
-        ),
-    ),
-    version: None,
-    timeout: None,
-    parallel: false,
-    explain: None,
-}
-
-For SELECT query, constructed typed query: {
-    "posts": TypedQuery {
-        query_type: Array(
-            Some(
-                TypedQuery {
-                    query_type: Scalar(
-                        Record(
-                            [
-                                Table(
-                                    "post",
-                                ),
-                            ],
-                        ),
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-            ),
-            None,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "height": TypedQuery {
-        query_type: Scalar(
-            Float,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "name": TypedQuery {
-        query_type: Scalar(
-            String,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "tags": TypedQuery {
-        query_type: Array(
-            Some(
-                TypedQuery {
-                    query_type: Scalar(
-                        String,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-            ),
-            None,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "balance": TypedQuery {
-        query_type: Scalar(
-            Decimal,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "address": TypedQuery {
-        query_type: Object(
-            {
-                "zip": TypedQuery {
-                    query_type: Scalar(
-                        Int,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "street": TypedQuery {
-                    query_type: Scalar(
-                        String,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "state": TypedQuery {
-                    query_type: Scalar(
-                        String,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-                "city": TypedQuery {
-                    query_type: Scalar(
-                        String,
-                    ),
-                    perms: Permissions {
-                        select: Full,
-                        create: Full,
-                        update: Full,
-                        delete: Full,
-                    },
-                },
-            },
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "profile_picture": TypedQuery {
-        query_type: Scalar(
-            Bytes,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "age": TypedQuery {
-        query_type: Scalar(
-            Int,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "ssn": TypedQuery {
-        query_type: Scalar(
-            String,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-    "created_at": TypedQuery {
-        query_type: Scalar(
-            Datetime,
-        ),
-        perms: Permissions {
-            select: Full,
-            create: Full,
-            update: Full,
-            delete: Full,
-        },
-    },
-}
 #![feature(prelude_import)]
 #[prelude_import]
 use std::prelude::rust_2021::*;
 #[macro_use]
 extern crate std;
 use dotenv::dotenv;
-use surrealix_macros::query;
+use surrealix_macros::{query, queryType};
+struct UserItemAddress {
+    state: String,
+    street: String,
+    zip: i64,
+    city: String,
+}
+#[automatically_derived]
+impl ::core::fmt::Debug for UserItemAddress {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field4_finish(
+            f,
+            "UserItemAddress",
+            "state",
+            &self.state,
+            "street",
+            &self.street,
+            "zip",
+            &self.zip,
+            "city",
+            &&self.city,
+        )
+    }
+}
+#[automatically_derived]
+impl ::core::clone::Clone for UserItemAddress {
+    #[inline]
+    fn clone(&self) -> UserItemAddress {
+        UserItemAddress {
+            state: ::core::clone::Clone::clone(&self.state),
+            street: ::core::clone::Clone::clone(&self.street),
+            zip: ::core::clone::Clone::clone(&self.zip),
+            city: ::core::clone::Clone::clone(&self.city),
+        }
+    }
+}
+#[allow(deprecated, non_upper_case_globals)]
+const _: () = {
+    impl miniserde::Serialize for UserItemAddress {
+        fn begin(&self) -> miniserde::ser::Fragment {
+            miniserde::ser::Fragment::Map(
+                miniserde::__private::Box::new(__Map { data: self, state: 0 }),
+            )
+        }
+    }
+    struct __Map<'__a> {
+        data: &'__a UserItemAddress,
+        state: miniserde::__private::usize,
+    }
+    impl<'__a> miniserde::ser::Map for __Map<'__a> {
+        fn next(
+            &mut self,
+        ) -> miniserde::__private::Option<
+            (
+                miniserde::__private::Cow<miniserde::__private::str>,
+                &dyn miniserde::Serialize,
+            ),
+        > {
+            let __state = self.state;
+            self.state = __state + 1;
+            match __state {
+                0usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("state"),
+                        &self.data.state,
+                    ))
+                }
+                1usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("street"),
+                        &self.data.street,
+                    ))
+                }
+                2usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("zip"),
+                        &self.data.zip,
+                    ))
+                }
+                3usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("city"),
+                        &self.data.city,
+                    ))
+                }
+                _ => miniserde::__private::None,
+            }
+        }
+    }
+};
+#[allow(deprecated, non_upper_case_globals)]
+const _: () = {
+    #[repr(C)]
+    struct __Visitor {
+        __out: miniserde::__private::Option<UserItemAddress>,
+    }
+    impl miniserde::Deserialize for UserItemAddress {
+        fn begin(
+            __out: &mut miniserde::__private::Option<Self>,
+        ) -> &mut dyn miniserde::de::Visitor {
+            unsafe {
+                &mut *{
+                    __out as *mut miniserde::__private::Option<Self> as *mut __Visitor
+                }
+            }
+        }
+    }
+    impl miniserde::de::Visitor for __Visitor {
+        fn map(
+            &mut self,
+        ) -> miniserde::Result<miniserde::__private::Box<dyn miniserde::de::Map + '_>> {
+            Ok(
+                miniserde::__private::Box::new(__State {
+                    state: miniserde::Deserialize::default(),
+                    street: miniserde::Deserialize::default(),
+                    zip: miniserde::Deserialize::default(),
+                    city: miniserde::Deserialize::default(),
+                    __out: &mut self.__out,
+                }),
+            )
+        }
+    }
+    struct __State<'__a> {
+        state: miniserde::__private::Option<String>,
+        street: miniserde::__private::Option<String>,
+        zip: miniserde::__private::Option<i64>,
+        city: miniserde::__private::Option<String>,
+        __out: &'__a mut miniserde::__private::Option<UserItemAddress>,
+    }
+    impl<'__a> miniserde::de::Map for __State<'__a> {
+        fn key(
+            &mut self,
+            __k: &miniserde::__private::str,
+        ) -> miniserde::Result<&mut dyn miniserde::de::Visitor> {
+            match __k {
+                "state" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.state),
+                    )
+                }
+                "street" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.street),
+                    )
+                }
+                "zip" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.zip),
+                    )
+                }
+                "city" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.city),
+                    )
+                }
+                _ => miniserde::__private::Ok(<dyn miniserde::de::Visitor>::ignore()),
+            }
+        }
+        fn finish(&mut self) -> miniserde::Result<()> {
+            let state = self.state.take().ok_or(miniserde::Error)?;
+            let street = self.street.take().ok_or(miniserde::Error)?;
+            let zip = self.zip.take().ok_or(miniserde::Error)?;
+            let city = self.city.take().ok_or(miniserde::Error)?;
+            *self.__out = miniserde::__private::Some(UserItemAddress {
+                state,
+                street,
+                zip,
+                city,
+            });
+            miniserde::__private::Ok(())
+        }
+    }
+};
+struct UserItem {
+    created_at: surrealix::types::DateTime,
+    posts: Vec<surrealix::types::RecordLink>,
+    profile_picture: miniserde::json::Value,
+    name: String,
+    address: UserItemAddress,
+    ssn: String,
+    tags: Vec<String>,
+    height: f64,
+    balance: miniserde::json::Value,
+    age: i64,
+}
+#[automatically_derived]
+impl ::core::fmt::Debug for UserItem {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        let names: &'static _ = &[
+            "created_at",
+            "posts",
+            "profile_picture",
+            "name",
+            "address",
+            "ssn",
+            "tags",
+            "height",
+            "balance",
+            "age",
+        ];
+        let values: &[&dyn ::core::fmt::Debug] = &[
+            &self.created_at,
+            &self.posts,
+            &self.profile_picture,
+            &self.name,
+            &self.address,
+            &self.ssn,
+            &self.tags,
+            &self.height,
+            &self.balance,
+            &&self.age,
+        ];
+        ::core::fmt::Formatter::debug_struct_fields_finish(f, "UserItem", names, values)
+    }
+}
+#[automatically_derived]
+impl ::core::clone::Clone for UserItem {
+    #[inline]
+    fn clone(&self) -> UserItem {
+        UserItem {
+            created_at: ::core::clone::Clone::clone(&self.created_at),
+            posts: ::core::clone::Clone::clone(&self.posts),
+            profile_picture: ::core::clone::Clone::clone(&self.profile_picture),
+            name: ::core::clone::Clone::clone(&self.name),
+            address: ::core::clone::Clone::clone(&self.address),
+            ssn: ::core::clone::Clone::clone(&self.ssn),
+            tags: ::core::clone::Clone::clone(&self.tags),
+            height: ::core::clone::Clone::clone(&self.height),
+            balance: ::core::clone::Clone::clone(&self.balance),
+            age: ::core::clone::Clone::clone(&self.age),
+        }
+    }
+}
+#[allow(deprecated, non_upper_case_globals)]
+const _: () = {
+    impl miniserde::Serialize for UserItem {
+        fn begin(&self) -> miniserde::ser::Fragment {
+            miniserde::ser::Fragment::Map(
+                miniserde::__private::Box::new(__Map { data: self, state: 0 }),
+            )
+        }
+    }
+    struct __Map<'__a> {
+        data: &'__a UserItem,
+        state: miniserde::__private::usize,
+    }
+    impl<'__a> miniserde::ser::Map for __Map<'__a> {
+        fn next(
+            &mut self,
+        ) -> miniserde::__private::Option<
+            (
+                miniserde::__private::Cow<miniserde::__private::str>,
+                &dyn miniserde::Serialize,
+            ),
+        > {
+            let __state = self.state;
+            self.state = __state + 1;
+            match __state {
+                0usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("created_at"),
+                        &self.data.created_at,
+                    ))
+                }
+                1usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("posts"),
+                        &self.data.posts,
+                    ))
+                }
+                2usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("profile_picture"),
+                        &self.data.profile_picture,
+                    ))
+                }
+                3usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("name"),
+                        &self.data.name,
+                    ))
+                }
+                4usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("address"),
+                        &self.data.address,
+                    ))
+                }
+                5usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("ssn"),
+                        &self.data.ssn,
+                    ))
+                }
+                6usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("tags"),
+                        &self.data.tags,
+                    ))
+                }
+                7usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("height"),
+                        &self.data.height,
+                    ))
+                }
+                8usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("balance"),
+                        &self.data.balance,
+                    ))
+                }
+                9usize => {
+                    miniserde::__private::Some((
+                        miniserde::__private::Cow::Borrowed("age"),
+                        &self.data.age,
+                    ))
+                }
+                _ => miniserde::__private::None,
+            }
+        }
+    }
+};
+#[allow(deprecated, non_upper_case_globals)]
+const _: () = {
+    #[repr(C)]
+    struct __Visitor {
+        __out: miniserde::__private::Option<UserItem>,
+    }
+    impl miniserde::Deserialize for UserItem {
+        fn begin(
+            __out: &mut miniserde::__private::Option<Self>,
+        ) -> &mut dyn miniserde::de::Visitor {
+            unsafe {
+                &mut *{
+                    __out as *mut miniserde::__private::Option<Self> as *mut __Visitor
+                }
+            }
+        }
+    }
+    impl miniserde::de::Visitor for __Visitor {
+        fn map(
+            &mut self,
+        ) -> miniserde::Result<miniserde::__private::Box<dyn miniserde::de::Map + '_>> {
+            Ok(
+                miniserde::__private::Box::new(__State {
+                    created_at: miniserde::Deserialize::default(),
+                    posts: miniserde::Deserialize::default(),
+                    profile_picture: miniserde::Deserialize::default(),
+                    name: miniserde::Deserialize::default(),
+                    address: miniserde::Deserialize::default(),
+                    ssn: miniserde::Deserialize::default(),
+                    tags: miniserde::Deserialize::default(),
+                    height: miniserde::Deserialize::default(),
+                    balance: miniserde::Deserialize::default(),
+                    age: miniserde::Deserialize::default(),
+                    __out: &mut self.__out,
+                }),
+            )
+        }
+    }
+    struct __State<'__a> {
+        created_at: miniserde::__private::Option<surrealix::types::DateTime>,
+        posts: miniserde::__private::Option<Vec<surrealix::types::RecordLink>>,
+        profile_picture: miniserde::__private::Option<miniserde::json::Value>,
+        name: miniserde::__private::Option<String>,
+        address: miniserde::__private::Option<UserItemAddress>,
+        ssn: miniserde::__private::Option<String>,
+        tags: miniserde::__private::Option<Vec<String>>,
+        height: miniserde::__private::Option<f64>,
+        balance: miniserde::__private::Option<miniserde::json::Value>,
+        age: miniserde::__private::Option<i64>,
+        __out: &'__a mut miniserde::__private::Option<UserItem>,
+    }
+    impl<'__a> miniserde::de::Map for __State<'__a> {
+        fn key(
+            &mut self,
+            __k: &miniserde::__private::str,
+        ) -> miniserde::Result<&mut dyn miniserde::de::Visitor> {
+            match __k {
+                "created_at" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.created_at),
+                    )
+                }
+                "posts" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.posts),
+                    )
+                }
+                "profile_picture" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.profile_picture),
+                    )
+                }
+                "name" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.name),
+                    )
+                }
+                "address" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.address),
+                    )
+                }
+                "ssn" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.ssn),
+                    )
+                }
+                "tags" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.tags),
+                    )
+                }
+                "height" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.height),
+                    )
+                }
+                "balance" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.balance),
+                    )
+                }
+                "age" => {
+                    miniserde::__private::Ok(
+                        miniserde::Deserialize::begin(&mut self.age),
+                    )
+                }
+                _ => miniserde::__private::Ok(<dyn miniserde::de::Visitor>::ignore()),
+            }
+        }
+        fn finish(&mut self) -> miniserde::Result<()> {
+            let created_at = self.created_at.take().ok_or(miniserde::Error)?;
+            let posts = self.posts.take().ok_or(miniserde::Error)?;
+            let profile_picture = self.profile_picture.take().ok_or(miniserde::Error)?;
+            let name = self.name.take().ok_or(miniserde::Error)?;
+            let address = self.address.take().ok_or(miniserde::Error)?;
+            let ssn = self.ssn.take().ok_or(miniserde::Error)?;
+            let tags = self.tags.take().ok_or(miniserde::Error)?;
+            let height = self.height.take().ok_or(miniserde::Error)?;
+            let balance = self.balance.take().ok_or(miniserde::Error)?;
+            let age = self.age.take().ok_or(miniserde::Error)?;
+            *self.__out = miniserde::__private::Some(UserItem {
+                created_at,
+                posts,
+                profile_picture,
+                name,
+                address,
+                ssn,
+                tags,
+                height,
+                balance,
+                age,
+            });
+            miniserde::__private::Ok(())
+        }
+    }
+};
+pub type User = Vec<UserItem>;
 fn main() {
-    let myUser;
     let results = {
-        struct PostsTypeItem {
-            #[serde(rename = "created_at")]
-            created_at: chrono::DateTime<chrono::Utc>,
-            #[serde(rename = "title")]
-            title: String,
-            #[serde(rename = "author")]
-            author: serde_json::Value,
-            #[serde(rename = "content")]
-            content: String,
-        }
-        struct AddressType {
-            #[serde(rename = "zip")]
-            zip: i64,
-            #[serde(rename = "street")]
-            street: String,
-            #[serde(rename = "state")]
-            state: String,
-            #[serde(rename = "city")]
-            city: String,
-        }
         struct Query1ResultItem {
-            #[serde(rename = "posts")]
-            posts: Vec<PostsTypeItem>,
-            #[serde(rename = "height")]
-            height: f64,
-            #[serde(rename = "name")]
-            name: String,
-            #[serde(rename = "tags")]
-            tags: Vec<String>,
-            #[serde(rename = "balance")]
-            balance: serde_json::Value,
-            #[serde(rename = "address")]
-            address: AddressType,
-            #[serde(rename = "profile_picture")]
-            profile_picture: serde_json::Value,
-            #[serde(rename = "age")]
-            age: i64,
-            #[serde(rename = "ssn")]
-            ssn: String,
-            #[serde(rename = "created_at")]
-            created_at: chrono::DateTime<chrono::Utc>,
+            #[serde(rename = "bal")]
+            bal: miniserde::json::Value,
         }
+        #[automatically_derived]
+        impl ::core::fmt::Debug for Query1ResultItem {
+            #[inline]
+            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                ::core::fmt::Formatter::debug_struct_field1_finish(
+                    f,
+                    "Query1ResultItem",
+                    "bal",
+                    &&self.bal,
+                )
+            }
+        }
+        #[automatically_derived]
+        impl ::core::clone::Clone for Query1ResultItem {
+            #[inline]
+            fn clone(&self) -> Query1ResultItem {
+                Query1ResultItem {
+                    bal: ::core::clone::Clone::clone(&self.bal),
+                }
+            }
+        }
+        #[allow(deprecated, non_upper_case_globals)]
+        const _: () = {
+            impl miniserde::Serialize for Query1ResultItem {
+                fn begin(&self) -> miniserde::ser::Fragment {
+                    miniserde::ser::Fragment::Map(
+                        miniserde::__private::Box::new(__Map { data: self, state: 0 }),
+                    )
+                }
+            }
+            struct __Map<'__a> {
+                data: &'__a Query1ResultItem,
+                state: miniserde::__private::usize,
+            }
+            impl<'__a> miniserde::ser::Map for __Map<'__a> {
+                fn next(
+                    &mut self,
+                ) -> miniserde::__private::Option<
+                    (
+                        miniserde::__private::Cow<miniserde::__private::str>,
+                        &dyn miniserde::Serialize,
+                    ),
+                > {
+                    let __state = self.state;
+                    self.state = __state + 1;
+                    match __state {
+                        0usize => {
+                            miniserde::__private::Some((
+                                miniserde::__private::Cow::Borrowed("bal"),
+                                &self.data.bal,
+                            ))
+                        }
+                        _ => miniserde::__private::None,
+                    }
+                }
+            }
+        };
+        #[allow(deprecated, non_upper_case_globals)]
+        const _: () = {
+            #[repr(C)]
+            struct __Visitor {
+                __out: miniserde::__private::Option<Query1ResultItem>,
+            }
+            impl miniserde::Deserialize for Query1ResultItem {
+                fn begin(
+                    __out: &mut miniserde::__private::Option<Self>,
+                ) -> &mut dyn miniserde::de::Visitor {
+                    unsafe {
+                        &mut *{
+                            __out as *mut miniserde::__private::Option<Self>
+                                as *mut __Visitor
+                        }
+                    }
+                }
+            }
+            impl miniserde::de::Visitor for __Visitor {
+                fn map(
+                    &mut self,
+                ) -> miniserde::Result<
+                    miniserde::__private::Box<dyn miniserde::de::Map + '_>,
+                > {
+                    Ok(
+                        miniserde::__private::Box::new(__State {
+                            bal: miniserde::Deserialize::default(),
+                            __out: &mut self.__out,
+                        }),
+                    )
+                }
+            }
+            struct __State<'__a> {
+                bal: miniserde::__private::Option<miniserde::json::Value>,
+                __out: &'__a mut miniserde::__private::Option<Query1ResultItem>,
+            }
+            impl<'__a> miniserde::de::Map for __State<'__a> {
+                fn key(
+                    &mut self,
+                    __k: &miniserde::__private::str,
+                ) -> miniserde::Result<&mut dyn miniserde::de::Visitor> {
+                    match __k {
+                        "bal" => {
+                            miniserde::__private::Ok(
+                                miniserde::Deserialize::begin(&mut self.bal),
+                            )
+                        }
+                        _ => {
+                            miniserde::__private::Ok(
+                                <dyn miniserde::de::Visitor>::ignore(),
+                            )
+                        }
+                    }
+                }
+                fn finish(&mut self) -> miniserde::Result<()> {
+                    let bal = self.bal.take().ok_or(miniserde::Error)?;
+                    *self.__out = miniserde::__private::Some(Query1ResultItem { bal });
+                    miniserde::__private::Ok(())
+                }
+            }
+        };
         type Query1Result = Vec<Query1ResultItem>;
-        type FinalQueryResult = Query1Result;
-        ()
+        struct Query2ResultItem {}
+        #[automatically_derived]
+        impl ::core::fmt::Debug for Query2ResultItem {
+            #[inline]
+            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                ::core::fmt::Formatter::write_str(f, "Query2ResultItem")
+            }
+        }
+        #[automatically_derived]
+        impl ::core::clone::Clone for Query2ResultItem {
+            #[inline]
+            fn clone(&self) -> Query2ResultItem {
+                Query2ResultItem {}
+            }
+        }
+        #[allow(deprecated, non_upper_case_globals)]
+        const _: () = {
+            impl miniserde::Serialize for Query2ResultItem {
+                fn begin(&self) -> miniserde::ser::Fragment {
+                    miniserde::ser::Fragment::Map(
+                        miniserde::__private::Box::new(__Map { data: self, state: 0 }),
+                    )
+                }
+            }
+            struct __Map<'__a> {
+                data: &'__a Query2ResultItem,
+                state: miniserde::__private::usize,
+            }
+            impl<'__a> miniserde::ser::Map for __Map<'__a> {
+                fn next(
+                    &mut self,
+                ) -> miniserde::__private::Option<
+                    (
+                        miniserde::__private::Cow<miniserde::__private::str>,
+                        &dyn miniserde::Serialize,
+                    ),
+                > {
+                    let __state = self.state;
+                    self.state = __state + 1;
+                    match __state {
+                        _ => miniserde::__private::None,
+                    }
+                }
+            }
+        };
+        #[allow(deprecated, non_upper_case_globals)]
+        const _: () = {
+            #[repr(C)]
+            struct __Visitor {
+                __out: miniserde::__private::Option<Query2ResultItem>,
+            }
+            impl miniserde::Deserialize for Query2ResultItem {
+                fn begin(
+                    __out: &mut miniserde::__private::Option<Self>,
+                ) -> &mut dyn miniserde::de::Visitor {
+                    unsafe {
+                        &mut *{
+                            __out as *mut miniserde::__private::Option<Self>
+                                as *mut __Visitor
+                        }
+                    }
+                }
+            }
+            impl miniserde::de::Visitor for __Visitor {
+                fn map(
+                    &mut self,
+                ) -> miniserde::Result<
+                    miniserde::__private::Box<dyn miniserde::de::Map + '_>,
+                > {
+                    Ok(
+                        miniserde::__private::Box::new(__State {
+                            __out: &mut self.__out,
+                        }),
+                    )
+                }
+            }
+            struct __State<'__a> {
+                __out: &'__a mut miniserde::__private::Option<Query2ResultItem>,
+            }
+            impl<'__a> miniserde::de::Map for __State<'__a> {
+                fn key(
+                    &mut self,
+                    __k: &miniserde::__private::str,
+                ) -> miniserde::Result<&mut dyn miniserde::de::Visitor> {
+                    match __k {
+                        _ => {
+                            miniserde::__private::Ok(
+                                <dyn miniserde::de::Visitor>::ignore(),
+                            )
+                        }
+                    }
+                }
+                fn finish(&mut self) -> miniserde::Result<()> {
+                    *self.__out = miniserde::__private::Some(Query2ResultItem {});
+                    miniserde::__private::Ok(())
+                }
+            }
+        };
+        type Query2Result = Vec<Query2ResultItem>;
+        type FinalQueryResult = (Query1Result, Query2Result);
+        let dummy: FinalQueryResult = unsafe { std::mem::zeroed() };
+        dummy
     };
+    for user in results.0.iter() {}
 }

@@ -1,14 +1,17 @@
 use dotenv::dotenv;
-use surrealix_macros::query;
+use surrealix_macros::{query, queryType};
+
+queryType!(User, "SELECT * FROM user;");
 
 fn main() {
-    let myUser;
-
     let results = query! {
-       r#"
-            SELECT * FROM user FETCH posts;
-       "#
+        r#"
+            SELECT balance as bal from user FETCH posts;
+            SELECT * from posts;
+        "#
     };
+
+    for user in results.0.iter() {}
 }
 
 /*

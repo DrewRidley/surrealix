@@ -7,8 +7,6 @@ use surrealdb::sql::{
 };
 
 pub fn analyze_select(tbls: &Tables, statement: &SelectStatement) -> TypedQuery {
-    println!("Analyzing select statement: \n{:#?}\n", statement);
-
     let is_value = statement.expr.1;
     let fields = &statement.expr.0;
 
@@ -49,11 +47,6 @@ pub fn analyze_select(tbls: &Tables, statement: &SelectStatement) -> TypedQuery 
             }
         }
     }
-
-    println!(
-        "For SELECT query, constructed typed query: {:#?}",
-        object_type
-    );
 
     let mut result = TypedQuery {
         query_type: QueryType::Array(

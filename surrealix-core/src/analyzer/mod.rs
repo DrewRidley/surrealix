@@ -13,7 +13,6 @@ use surrealdb::sql::Statement;
 pub type Tables = HashMap<String, TypedQuery>;
 
 pub fn analyze(tables: Tables, query: String) -> Vec<TypedQuery> {
-    println!("Query string: [{:?}]", query);
     let parsed = surrealdb::sql::parse(query.as_str()).unwrap();
 
     let mut data = vec![];

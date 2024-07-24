@@ -3,8 +3,17 @@ name = "surrealix-core"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+serde = ["dep:serde", "dep:serde_json"]
+miniserde = ["dep:miniserde"]
+
 [dependencies]
 proc-macro2 = "1.0.86"
 quote = "1.0.36"
 surrealdb = "1.5.4"
 thiserror = "1.0.63"
+serde = { version = "*", optional = true }
+serde_json = { version = "*", optional = true }
+miniserde = { version = "*", optional = true }
+chrono = "0.4.38"

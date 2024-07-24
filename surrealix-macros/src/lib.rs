@@ -1,8 +1,10 @@
 #![feature(proc_macro_span)]
 #![feature(proc_macro_diagnostic)]
+use proc_macro::Ident;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro2::TokenTree;
+use quote::format_ident;
 use quote::quote;
 use std::env;
 use std::fs;
@@ -12,9 +14,12 @@ use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 use surrealix_core::analyzer::analyze;
 use surrealix_core::code_generator::generate_code;
+use surrealix_core::code_generator::generate_single_type_alias;
 use surrealix_core::schema::parse_schema;
 use syn::parse::ParseStream;
 use syn::spanned::Spanned;
+use syn::LitStr;
+use syn::Token;
 use syn::{parse::Parse, parse_macro_input};
 use thiserror::Error;
 use tokio::runtime::Runtime;
@@ -107,12 +112,51 @@ impl Parse for QueryInput {
     }
 }
 
+struct QueryTypeInput {
+    type_name: proc_macro2::Ident,
+    query: LitStr,
+}
+
+impl Parse for QueryTypeInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let type_name = input.parse()?;
+        input.parse::<Token![,]>()?;
+        let query = input.parse()?;
+        Ok(QueryTypeInput { type_name, query })
+    }
+}
+
+#[proc_macro]
+pub fn queryType(input: TokenStream) -> TokenStream {
+    let QueryTypeInput { type_name, query } = parse_macro_input!(input as QueryTypeInput);
+    let query_str = query.value();
+
+    let schema = match fetch_schema() {
+        Ok(schema) => schema,
+        Err(e) => {
+            let error_message = e.to_string();
+            return TokenStream::from(quote! {
+                compile_error!(#error_message);
+            });
+        }
+    };
+
+    let tables = parse_schema(&schema).unwrap();
+    let analysis_result = analyze(tables, query_str);
+
+    if let Some(typed_query) = analysis_result.first() {
+        generate_single_type_alias(typed_query, &type_name.to_string()).into()
+    } else {
+        TokenStream::from(quote! {
+            compile_error!("Failed to analyze the query");
+        })
+    }
+}
+
 #[proc_macro]
 pub fn query(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as QueryItem);
     let query = input.content;
-
-    println!("Query string: {:?}", query);
 
     let schema = match fetch_schema() {
         Ok(schema) => schema,
@@ -129,12 +173,15 @@ pub fn query(input: TokenStream) -> TokenStream {
 
     let res = analyze(tables, query.clone());
     let generated_code = generate_code(res);
+    let dummy_instance = quote! {
+        let dummy: FinalQueryResult = unsafe { std::mem::zeroed() };
+        dummy
+    };
 
     quote! {
         {
             #generated_code
-
-            ()
+            #dummy_instance
         }
     }
     .into()
