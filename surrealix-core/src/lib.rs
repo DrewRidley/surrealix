@@ -1,6 +1,6 @@
 pub mod analyzer;
-pub mod code_generator;
+pub mod ast;
 pub mod schema;
-pub mod types;
 
+pub mod types;
 pub use types::{DateTime, Duration, RecordLink};

@@ -6,32 +6,37 @@ mod relate;
 mod select;
 mod update;
 
-use crate::types::{QueryType, TypedQuery};
+use crate::{
+    ast::TypeAST,
+    types::{QueryType, TypedQuery},
+};
+use select::analyze_select;
 use std::collections::HashMap;
-use surrealdb::sql::Statement;
+use surrealdb::sql::{Query, Statement};
 
-pub type Tables = HashMap<String, TypedQuery>;
+pub type Tables = HashMap<String, TypeAST>;
 
-pub fn analyze(tables: Tables, query: String) -> Vec<TypedQuery> {
-    let parsed = surrealdb::sql::parse(query.as_str()).unwrap();
+/// Analyzes the specific query, generating a corresponding AST.
+///
+/// The returned value contains a [TypeAST] corresponding to each statement in the query.
+/// This TypeAST encompasses all transformations performed by the query on the base schema.
+/// There may be gaps in the analysis, represented by [ScalarType::Any].
+pub fn analyze(schema: Query, query: Query) -> Vec<TypeAST> {
+    let parsed_schema: TypeAST = TypeAST::Scalar(crate::ast::ScalarType::Any);
 
-    let mut data = vec![];
-    for statement in parsed {
-        if let Some(val) = analyze_query(&tables, statement) {
-            data.push(val);
-        }
-    }
-    data
+    schema
+        .iter()
+        .map(|stmt| analyze_statement(&parsed_schema, stmt))
+        .collect()
 }
 
-fn analyze_query(tables: &Tables, statement: Statement) -> Option<TypedQuery> {
-    match statement {
-        Statement::Select(sel) => Some(select::analyze_select(tables, &sel)),
-        Statement::Create(create) => Some(create::analyze_create(tables, &create)),
-        Statement::Update(update) => Some(update::analyze_update(tables, &update)),
-        Statement::Delete(delete) => Some(delete::analyze_delete(tables, &delete)),
-        Statement::Relate(relate) => Some(relate::analyze_relate(tables, &relate)),
-        Statement::Insert(insert) => Some(insert::analyze_insert(tables, &insert)),
-        _ => None,
+/// Computes statement transforms over a base AST.
+///
+/// For top level statements, 'base_type' should contain an object for each table.
+/// For other statements, base_type is the type a statement is transforming.
+fn analyze_statement(base_type: &TypeAST, stmt: &Statement) -> TypeAST {
+    match stmt {
+        Statement::Select(sel_stmt) => analyze_select(base_type, sel_stmt).unwrap(),
+        _ => todo!(),
     }
 }

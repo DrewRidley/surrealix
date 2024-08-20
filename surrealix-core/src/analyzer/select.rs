@@ -1,295 +1,561 @@
-use super::{function::analyze_function, Tables};
-use crate::types::{QueryType, TypedQuery};
+use crate::ast::{AstError, FieldInfo, FieldMetadata, ObjectType, ScalarType, TypeAST};
 use std::collections::HashMap;
 use surrealdb::sql::{
-    statements::SelectStatement, Cast, Fetchs, Field, Function, Ident, Idiom, Kind, Part,
-    Permissions, Subquery, Value,
+    statements::SelectStatement, Fetchs, Field, Fields, Idiom, Idioms, Part, Permissions, Value,
 };
+use thiserror::Error;
 
-pub fn analyze_select(tbls: &Tables, statement: &SelectStatement) -> TypedQuery {
-    let is_value = statement.expr.1;
-    let fields = &statement.expr.0;
+#[derive(Error, Debug)]
+pub enum AnalyzeSelectError {
+    #[error("Schema provided is not an object")]
+    InvalidSchema,
+    #[error("Unknown field: {0}")]
+    UnknownField(String),
+    #[error("Invalid field type")]
+    InvalidFieldType,
+    #[error("Unsupported operation: {0}")]
+    UnsupportedOperation(String),
+    #[error(transparent)]
+    AstError(#[from] AstError),
+}
 
-    if is_value {
-        // Handle SELECT VALUE statement
-        if let Some(field) = fields.first() {
-            //The type of the array contents.
-            let array_type = analyze_field(tbls, &statement.what, field);
-
-            return TypedQuery {
-                // 'SELECT VALUE' returns an array.
-                // TODO: handle nuanced case where a 'DISTINCT' value can be selected.
-                query_type: QueryType::Array(
-                    Some(Box::new(TypedQuery {
-                        query_type: array_type.query_type,
-                        perms: array_type.perms.clone(),
-                    })),
-                    None,
-                ),
-                //Array cant be mutated directly so 'full' permissions are inferred.
-                perms: Permissions::full(),
-            };
-        }
-    }
-
-    let mut object_type = HashMap::new();
-
-    for field in fields {
-        match field {
-            Field::All => {
-                // Include all fields from the base table or subquery
-                object_type.extend(analyze_what(tbls, &statement.what));
-            }
-            Field::Single { expr, alias } => {
-                let field_type = analyze_value(tbls, &statement.what, expr);
-                let field_name = alias.clone().unwrap_or_else(|| expr.to_idiom());
-                object_type.insert(field_name.to_string(), field_type);
-            }
-        }
-    }
-
-    let mut result = TypedQuery {
-        query_type: QueryType::Array(
-            Some(Box::new(TypedQuery {
-                query_type: QueryType::Object(object_type),
-                perms: Permissions::none(),
-            })),
-            None,
-        ),
-        perms: Permissions::full(),
+pub fn analyze_select(
+    schema: &TypeAST,
+    stmt: &SelectStatement,
+) -> Result<TypeAST, AnalyzeSelectError> {
+    let TypeAST::Object(schema_obj) = schema else {
+        return Err(AnalyzeSelectError::InvalidSchema);
     };
 
-    if let Some(fetch) = &statement.fetch {
-        result = apply_fetch(tbls, result, fetch);
-    }
+    // Step 1: Analyze the 'FROM' clause
+    let base_type = analyze_from(&schema_obj, &stmt.what)?;
 
-    result
-}
+    // Step 2: Apply field selection
+    let mut selected_type = apply_field_selection(schema, &base_type, &stmt.expr, &stmt.omit)?;
 
-fn apply_fetch(tbls: &Tables, mut query: TypedQuery, fetch: &Fetchs) -> TypedQuery {
-    if let QueryType::Array(Some(inner), _) = &mut query.query_type {
-        if let QueryType::Object(fields) = &mut inner.query_type {
-            for fetch_item in fetch.iter() {
-                let idiom = fetch_item.0.clone();
-                if let Some(field_type) = traverse_and_fetch(tbls, fields, &idiom) {
-                    fields.insert(idiom.to_string(), field_type);
+    // Step 3: Apply fetch
+    if let Some(fetch) = &stmt.fetch {
+        for fetch_item in &fetch.0 {
+            let fetched_ast = selected_type.resolve_idiom(&fetch_item.0)?;
+            match fetched_ast {
+                TypeAST::Record(_) => {
+                    selected_type.replace_record_links(schema)?;
                 }
-            }
-        }
-    }
-    query
-}
-
-fn traverse_and_fetch(
-    tbls: &Tables,
-    fields: &mut HashMap<String, TypedQuery>,
-    idiom: &Idiom,
-) -> Option<TypedQuery> {
-    let parts = &idiom.0;
-    let mut current_fields = fields;
-
-    for (i, part) in parts.iter().enumerate() {
-        match part {
-            Part::Field(field) => {
-                let field_name = field.to_string();
-                if i == parts.len() - 1 {
-                    // We're at the last part of the idiom
-                    return current_fields
-                        .get(&field_name)
-                        .map(|field_type| fetch_field(tbls, field_type));
-                } else {
-                    // We need to go deeper
-                    if let Some(TypedQuery {
-                        query_type: QueryType::Object(nested_fields),
-                        ..
-                    }) = current_fields.get_mut(&field_name)
-                    {
-                        current_fields = nested_fields;
+                TypeAST::Array(boxed) => {
+                    if let TypeAST::Record(_) = boxed.0 {
+                        selected_type.replace_record_links(schema)?;
                     } else {
-                        return None;
+                        return Err(AnalyzeSelectError::UnsupportedOperation(format!(
+                            "Unsupported fetch type: {:?}",
+                            boxed.0
+                        )));
                     }
                 }
-            }
-            _ => return None, // Handle other Part variants if needed
-        }
-    }
-    None
-}
-
-fn fetch_field(tbls: &Tables, field_type: &TypedQuery) -> TypedQuery {
-    match &field_type.query_type {
-        QueryType::Scalar(Kind::Record(table_names)) => {
-            if let Some(table_name) = table_names.first() {
-                if let Some(table_type) = tbls.get(&table_name.to_string()) {
-                    return table_type.clone();
-                }
-            }
-            field_type.clone()
-        }
-        QueryType::Array(Some(inner), _) => {
-            if let QueryType::Scalar(Kind::Record(table_names)) = &inner.query_type {
-                if let Some(table_name) = table_names.first() {
-                    if let Some(table_type) = tbls.get(&table_name.to_string()) {
-                        return TypedQuery {
-                            query_type: QueryType::Array(Some(Box::new(table_type.clone())), None),
-                            perms: field_type.perms.clone(),
-                        };
-                    }
-                }
-            }
-            field_type.clone()
-        }
-        _ => field_type.clone(),
-    }
-}
-
-fn analyze_what(tbls: &Tables, what: &[Value]) -> HashMap<String, TypedQuery> {
-    let mut result = HashMap::new();
-    for value in what {
-        match value {
-            Value::Table(table) => {
-                if let Some(table_type) = tbls.get(&table.to_string()) {
-                    if let QueryType::Object(fields) = &table_type.query_type {
-                        result.extend(fields.clone());
-                    }
-                }
-            }
-            Value::Subquery(subquery) => {
-                if let Subquery::Select(select) = &**subquery {
-                    let subquery_type = analyze_select(tbls, select);
-                    if let QueryType::Array(Some(inner), _) = subquery_type.query_type {
-                        if let QueryType::Object(fields) = inner.query_type {
-                            result.extend(fields);
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-    result
-}
-
-fn analyze_field(tbls: &Tables, table_names: &[Value], field: &Field) -> TypedQuery {
-    match field {
-        Field::All => TypedQuery {
-            query_type: QueryType::Object(analyze_what(tbls, table_names)),
-            perms: Permissions::none(),
-        },
-        Field::Single { expr, .. } => analyze_value(tbls, table_names, expr),
-    }
-}
-
-fn analyze_value(tbls: &Tables, table_names: &[Value], value: &Value) -> TypedQuery {
-    match value {
-        Value::Idiom(idiom) => analyze_idiom(tbls, table_names, idiom),
-        Value::Function(func) => {
-            let args: Vec<TypedQuery> = func
-                .args()
-                .iter()
-                .map(|arg| analyze_value(tbls, table_names, arg))
-                .collect();
-            analyze_function(func, args)
-        }
-        Value::Subquery(subquery) => {
-            if let Subquery::Select(select) = &**subquery {
-                analyze_select(tbls, select)
-            } else {
-                TypedQuery {
-                    query_type: QueryType::Scalar(Kind::Any),
-                    perms: Permissions::none(),
+                _ => {
+                    return Err(AnalyzeSelectError::UnsupportedOperation(format!(
+                        "Unsupported fetch type: {:?}",
+                        fetched_ast
+                    )));
                 }
             }
         }
-        Value::Cast(cast) => TypedQuery {
-            query_type: QueryType::Scalar(cast.0.clone()),
-            perms: Permissions::none(),
-        },
-        Value::Param(_) => TypedQuery {
-            query_type: QueryType::Scalar(Kind::Any),
-            perms: Permissions::none(),
-        },
-        Value::Constant(_) => TypedQuery {
-            query_type: QueryType::Scalar(Kind::Any),
-            perms: Permissions::none(),
-        },
-        _ => TypedQuery {
-            query_type: QueryType::Scalar(Kind::Any),
-            perms: Permissions::none(),
-        },
     }
-}
 
-fn analyze_idiom(tbls: &Tables, table_names: &[Value], idiom: &Idiom) -> TypedQuery {
-    let mut current_type = None;
-
-    for table_name in table_names {
-        if let Value::Table(table) = table_name {
-            if let Some(table_type) = tbls.get(&table.to_string()) {
-                current_type = Some(table_type);
-                break;
+    // Step 4: Handle VALUE keyword
+    let value_type = if stmt.expr.0.len() == 1 && stmt.expr.1 {
+        // If there's only one field and VALUE keyword is used
+        match &selected_type {
+            TypeAST::Object(obj) => {
+                if let Some(field) = obj.fields.values().next() {
+                    field.ast.clone()
+                } else {
+                    return Err(AnalyzeSelectError::InvalidFieldType);
+                }
             }
+            _ => return Err(AnalyzeSelectError::InvalidFieldType),
         }
-    }
-
-    if let Some(start_type) = current_type {
-        traverse_idiom(tbls, &start_type.query_type, idiom)
     } else {
-        TypedQuery {
-            query_type: QueryType::Scalar(Kind::Any),
-            perms: Permissions::none(),
-        }
+        selected_type
+    };
+
+    // Step 5: Wrap in array if not ONLY
+    let final_type = if stmt.only {
+        value_type
+    } else {
+        TypeAST::Array(Box::new((value_type, None)))
+    };
+
+    Ok(final_type)
+}
+
+fn analyze_from(schema: &ObjectType, what: &[Value]) -> Result<TypeAST, AnalyzeSelectError> {
+    if let Some(Value::Table(table)) = what.first() {
+        schema
+            .fields
+            .get(&table.to_string())
+            .map(|field_info| field_info.ast.clone())
+            .ok_or_else(|| AnalyzeSelectError::UnknownField(table.to_string()))
+    } else {
+        Err(AnalyzeSelectError::UnsupportedOperation(
+            "Unsupported FROM clause".to_string(),
+        ))
     }
 }
 
-fn traverse_idiom(tbls: &Tables, query_type: &QueryType, idiom: &Idiom) -> TypedQuery {
-    let mut current_type = query_type;
+fn apply_field_selection(
+    schema: &TypeAST,
+    base_type: &TypeAST,
+    expr: &Fields,
+    omit: &Option<Idioms>,
+) -> Result<TypeAST, AnalyzeSelectError> {
+    let TypeAST::Object(base_obj) = base_type else {
+        return Err(AnalyzeSelectError::InvalidFieldType);
+    };
 
-    for part in idiom.0.iter() {
-        match (current_type, part) {
-            (QueryType::Object(fields), Part::Field(Ident(field_name))) => {
-                if let Some(field_type) = fields.get(field_name) {
-                    current_type = &field_type.query_type;
-                } else {
-                    return TypedQuery {
-                        query_type: QueryType::Scalar(Kind::Any),
-                        perms: Permissions::none(),
-                    };
-                }
-            }
-            (QueryType::Array(Some(inner_type), _), Part::All) => {
-                current_type = &inner_type.query_type;
-            }
-            (_, Part::Graph(graph)) => {
-                if let Some(table_name) = graph.what.first() {
-                    if let Some(table_type) = tbls.get(&table_name.to_string()) {
-                        current_type = &table_type.query_type;
-                    } else {
-                        return TypedQuery {
-                            query_type: QueryType::Scalar(Kind::Any),
-                            perms: Permissions::none(),
-                        };
+    let mut result_fields = HashMap::new();
+
+    for field in &expr.0 {
+        match field {
+            Field::All => {
+                // Include all fields except those in the OMIT clause
+                for (name, field_info) in &base_obj.fields {
+                    if !is_field_omitted(name, omit) {
+                        result_fields.insert(name.clone(), field_info.clone());
                     }
                 }
             }
-            (QueryType::Object(_), Part::All) => {
-                // Return the entire object when selecting all fields
-                return TypedQuery {
-                    query_type: current_type.clone(),
-                    perms: Permissions::none(),
-                };
+            Field::Single { expr, alias } => match expr {
+                Value::Idiom(idiom) => {
+                    println!("Resolving graph traversal for idiom: {:?}", idiom);
+                    let (field_name, field_ast) =
+                        resolve_graph_traversal(schema, base_type, idiom)?;
+
+                    let result_name = alias
+                        .as_ref()
+                        .map(|a| a.to_string())
+                        .unwrap_or(field_name.clone());
+                    if !is_field_omitted(&result_name, omit) {
+                        result_fields.insert(
+                            result_name,
+                            FieldInfo {
+                                ast: field_ast,
+                                meta: FieldMetadata {
+                                    original_name: field_name,
+                                    original_path: idiom.0.iter().map(|p| p.to_string()).collect(),
+                                    permissions: Permissions::default(),
+                                },
+                            },
+                        );
+                    }
+                }
+                _ => {
+                    return Err(AnalyzeSelectError::UnsupportedOperation(
+                        "Unsupported field expression".to_string(),
+                    ))
+                }
+            },
+        }
+    }
+
+    Ok(TypeAST::Object(ObjectType {
+        fields: result_fields,
+    }))
+}
+
+fn resolve_graph_traversal(
+    schema: &TypeAST,
+    base_type: &TypeAST,
+    idiom: &Idiom,
+) -> Result<(String, TypeAST), AnalyzeSelectError> {
+    let mut current_type = base_type;
+    let mut field_name = String::new();
+
+    for (i, part) in idiom.0.iter().enumerate() {
+        match part {
+            Part::Field(ident) => {
+                field_name = ident.to_string();
+                if let TypeAST::Object(obj) = current_type {
+                    if let Some(field_info) = obj.fields.get(&field_name) {
+                        current_type = &field_info.ast;
+                    } else {
+                        println!("Encountered an unknown field in idiom: {:?}", field_name);
+                        return Err(AnalyzeSelectError::UnknownField(field_name));
+                    }
+                } else {
+                    return Err(AnalyzeSelectError::InvalidFieldType);
+                }
+            }
+            Part::Graph(graph) => {
+                let edge_table = &graph.what.0[0].to_string();
+                field_name = format!("->{}", edge_table);
+
+                if let TypeAST::Object(schema_obj) = schema {
+                    if let Some(edge_table_info) = schema_obj.fields.get(edge_table) {
+                        if let TypeAST::Object(edge_obj) = &edge_table_info.ast {
+                            println!(
+                                "Edge table '{}' fields: {:?}",
+                                edge_table,
+                                edge_obj.fields.keys().collect::<Vec<_>>()
+                            );
+
+                            let (relation_field, target_table) =
+                                find_relation_field(edge_obj, &graph.dir)?;
+
+                            println!("Found relation field: {}", relation_field);
+                            println!("Target table: {}", target_table);
+
+                            if let Some(target_table_info) = schema_obj.fields.get(&target_table) {
+                                current_type = &target_table_info.ast;
+                                field_name = format!("{}->{}.*", field_name, target_table);
+                            } else {
+                                return Err(AnalyzeSelectError::UnknownField(target_table.clone()));
+                            }
+                        } else {
+                            return Err(AnalyzeSelectError::InvalidFieldType);
+                        }
+                    } else {
+                        return Err(AnalyzeSelectError::UnknownField(edge_table.clone()));
+                    }
+                } else {
+                    return Err(AnalyzeSelectError::InvalidSchema);
+                }
+            }
+            Part::All if i == idiom.0.len() - 1 => {
+                // We've reached the end of the traversal, return the current type
+                return Ok((field_name, current_type.clone()));
             }
             _ => {
-                return TypedQuery {
-                    query_type: QueryType::Scalar(Kind::Any),
-                    perms: Permissions::none(),
-                };
+                return Err(AnalyzeSelectError::UnsupportedOperation(format!(
+                    "Unsupported graph traversal part: {:?}",
+                    part
+                )))
             }
         }
     }
 
-    TypedQuery {
-        query_type: current_type.clone(),
-        perms: Permissions::none(),
+    Ok((field_name, current_type.clone()))
+}
+
+fn find_relation_field(
+    edge_obj: &ObjectType,
+    dir: &surrealdb::sql::Dir,
+) -> Result<(String, String), AnalyzeSelectError> {
+    let (primary, fallback) = match dir {
+        surrealdb::sql::Dir::Out => ("out", "in"),
+        surrealdb::sql::Dir::In => ("in", "out"),
+        _ => {
+            return Err(AnalyzeSelectError::UnsupportedOperation(
+                "Unsupported graph direction".to_string(),
+            ))
+        }
+    };
+
+    if let Some(field) = edge_obj
+        .fields
+        .get(primary)
+        .or_else(|| edge_obj.fields.get(fallback))
+    {
+        if let TypeAST::Record(target_table) = &field.ast {
+            Ok((
+                field.meta.original_name.to_string(),
+                target_table.to_string(),
+            ))
+        } else {
+            Err(AnalyzeSelectError::InvalidFieldType)
+        }
+    } else {
+        Err(AnalyzeSelectError::UnknownField(format!(
+            "Neither '{}' nor '{}' field found",
+            primary, fallback
+        )))
+    }
+}
+
+fn is_field_omitted(field_name: &str, omit: &Option<Idioms>) -> bool {
+    omit.as_ref().map_or(false, |idioms| {
+        idioms.0.iter().any(|idiom| {
+            idiom.0.first().map_or(
+                false,
+                |part| matches!(part, Part::Field(ident) if ident.to_string() == field_name),
+            )
+        })
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        ast::{ScalarType, TypeAST},
+        schema::analyze_schema,
+    };
+    use surrealdb::sql::{parse, Statement};
+
+    fn create_test_schema() -> TypeAST {
+        let schema = r#"
+            DEFINE TABLE user SCHEMAFULL;
+                DEFINE FIELD id on user TYPE uuid;
+                DEFINE FIELD name ON user TYPE string;
+                DEFINE FIELD age ON user TYPE number;
+                DEFINE FIELD address on user TYPE object;
+                    DEFINE FIELD address.city on user TYPE string;
+                    DEFINE FIELD address.zip on user TYPE number;
+                    DEFINE FIELD address.state on user TYPE string;
+                    DEFINE FIELD address.street on user TYPE string;
+                DEFINE FIELD tags on user TYPE array;
+                    DEFINE FIELD tags.* on user TYPE record<tag>;
+                DEFINE FIELD best_friend on user TYPE record<user>;
+            DEFINE TABLE friend SCHEMAFULL;
+                DEFINE FIELD in ON friend TYPE record<user>;
+                DEFINE FIELD out ON friend TYPE record<user>;
+            DEFINE TABLE tag SCHEMAFULL;
+                DEFINE FIELD id on tag TYPE uuid;
+                DEFINE FIELD name on tag TYPE string;
+                DEFINE FIELD value on tag TYPE number;
+        "#;
+
+        let parsed = surrealdb::sql::parse(schema).unwrap();
+        analyze_schema(parsed).unwrap()
+    }
+
+    fn parse_select(input: &str) -> SelectStatement {
+        let query = parse(input).unwrap();
+        match query.0.first().unwrap() {
+            Statement::Select(stmt) => stmt.clone(),
+            _ => panic!("Expected SELECT statement"),
+        }
+    }
+
+    #[test]
+    fn select() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT id, name, age FROM user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 3);
+        assert!(obj.fields.contains_key("id"));
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("age"));
+    }
+
+    #[test]
+    fn select_all() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT * FROM user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 6);
+        assert!(obj.fields.contains_key("id"));
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("age"));
+        assert!(obj.fields.contains_key("address"));
+        assert!(obj.fields.contains_key("tags"));
+        assert!(obj.fields.contains_key("best_friend"));
+    }
+
+    #[test]
+    fn select_one() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT * FROM ONLY user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Object(obj) = result else {
+            panic!("Expected Object TypeAST");
+        };
+
+        assert_eq!(obj.fields.len(), 6);
+        assert!(obj.fields.contains_key("id"));
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("age"));
+        assert!(obj.fields.contains_key("address"));
+        assert!(obj.fields.contains_key("tags"));
+        assert!(obj.fields.contains_key("best_friend"));
+    }
+
+    #[test]
+    fn select_rename() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT name AS full_name, age FROM user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("full_name"));
+        assert!(obj.fields.contains_key("age"));
+        assert_eq!(obj.fields["full_name"].meta.original_name, "name");
+        assert!(matches!(
+            obj.fields["full_name"].ast,
+            TypeAST::Scalar(ScalarType::String)
+        ));
+    }
+
+    #[test]
+    fn select_omit() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT * OMIT age FROM user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 5);
+        assert!(obj.fields.contains_key("id"));
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("address"));
+        assert!(obj.fields.contains_key("tags"));
+        assert!(obj.fields.contains_key("best_friend"));
+
+        //It should not contain age!
+        assert!(!obj.fields.contains_key("age"));
+    }
+
+    #[test]
+    fn select_object() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT address FROM user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 1);
+        assert!(obj.fields.contains_key("address"));
+        let TypeAST::Object(address_obj) = &obj.fields["address"].ast else {
+            panic!("Expected Object TypeAST for address");
+        };
+        assert!(address_obj.fields.contains_key("city"));
+    }
+
+    #[test]
+    fn test_select_value() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT VALUE age FROM user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Scalar(scalar_type) = boxed_arr.0 else {
+            panic!("Expected Scalar TypeAST inside Array");
+        };
+
+        assert!(matches!(scalar_type, ScalarType::Number));
+    }
+
+    #[test]
+    fn fetch_array() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT name, tags FROM user FETCH tags");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("tags"));
+
+        // Check that tags are fetched
+        let TypeAST::Array(tag_boxed) = &obj.fields["tags"].ast else {
+            panic!("Expected Array TypeAST for tags");
+        };
+
+        let TypeAST::Object(tag_obj) = &tag_boxed.0 else {
+            panic!(
+                "Expected Object inside Array for tags. Got: \n{:#?}",
+                tag_boxed.0
+            );
+        };
+
+        assert!(tag_obj.fields.contains_key("id"));
+        assert!(tag_obj.fields.contains_key("name"));
+        assert!(tag_obj.fields.contains_key("value"));
+    }
+
+    #[test]
+    fn fetch_single() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT name, best_friend FROM user FETCH best_friend");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("best_friend"));
+
+        // Check that best_friend is fetched
+        let TypeAST::Object(best_friend_obj) = &obj.fields["best_friend"].ast else {
+            panic!("Expected Object TypeAST for best_friend");
+        };
+
+        assert!(best_friend_obj.fields.contains_key("id"));
+        assert!(best_friend_obj.fields.contains_key("name"));
+        assert!(best_friend_obj.fields.contains_key("age"));
+        assert!(best_friend_obj.fields.contains_key("address"));
+        assert!(best_friend_obj.fields.contains_key("tags"));
+        assert!(best_friend_obj.fields.contains_key("best_friend"));
+    }
+
+    #[test]
+    fn demo() {
+        let schema = create_test_schema();
+        let query = "SELECT name, age as renamedAge, address, ->friend->user.* FROM user;";
+        let stmt = parse_select(query);
+        let result = analyze_select(&schema, &stmt).unwrap();
     }
 }

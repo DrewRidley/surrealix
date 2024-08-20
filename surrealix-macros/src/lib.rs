@@ -13,9 +13,6 @@ use surrealdb::engine::remote::http::Http;
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 use surrealix_core::analyzer::analyze;
-use surrealix_core::code_generator::generate_code;
-use surrealix_core::code_generator::generate_single_type_alias;
-use surrealix_core::schema::parse_schema;
 use syn::parse::ParseStream;
 use syn::spanned::Spanned;
 use syn::LitStr;
@@ -43,10 +40,6 @@ enum SchemaError {
 
     #[error("Failed to load .env file: {0}")]
     DotEnvError(#[from] dotenv::Error),
-}
-
-fn parse_db_schema(res: surrealdb::sql::Value) -> String {
-    res.to_string()
 }
 
 fn load_env() -> Result<(), SchemaError> {
@@ -126,32 +119,32 @@ impl Parse for QueryTypeInput {
     }
 }
 
-#[proc_macro]
-pub fn queryType(input: TokenStream) -> TokenStream {
-    let QueryTypeInput { type_name, query } = parse_macro_input!(input as QueryTypeInput);
-    let query_str = query.value();
+// #[proc_macro]
+// pub fn queryType(input: TokenStream) -> TokenStream {
+//     let QueryTypeInput { type_name, query } = parse_macro_input!(input as QueryTypeInput);
+//     let query_str = query.value();
 
-    let schema = match fetch_schema() {
-        Ok(schema) => schema,
-        Err(e) => {
-            let error_message = e.to_string();
-            return TokenStream::from(quote! {
-                compile_error!(#error_message);
-            });
-        }
-    };
+//     let schema = match fetch_schema() {
+//         Ok(schema) => schema,
+//         Err(e) => {
+//             let error_message = e.to_string();
+//             return TokenStream::from(quote! {
+//                 compile_error!(#error_message);
+//             });
+//         }
+//     };
 
-    let tables = parse_schema(&schema).unwrap();
-    let analysis_result = analyze(tables, query_str);
+//     // let tables = parse_schema(&schema).unwrap();
+//     // let analysis_result = analyze(tables, query_str);
 
-    if let Some(typed_query) = analysis_result.first() {
-        generate_single_type_alias(typed_query, &type_name.to_string()).into()
-    } else {
-        TokenStream::from(quote! {
-            compile_error!("Failed to analyze the query");
-        })
-    }
-}
+//     // if let Some(typed_query) = analysis_result.first() {
+//     //     generate_single_type_alias(typed_query, &type_name.to_string()).into()
+//     // } else {
+//     //     TokenStream::from(quote! {
+//     //         compile_error!("Failed to analyze the query");
+//     //     })
+//     // }
+// }
 
 #[proc_macro]
 pub fn query(input: TokenStream) -> TokenStream {
@@ -169,19 +162,18 @@ pub fn query(input: TokenStream) -> TokenStream {
     };
 
     // Parse schema into definitions.
-    let tables = parse_schema(&schema).unwrap();
+    //let tables = parse_schema(&schema).unwrap();
 
-    let res = analyze(tables, query.clone());
-    let generated_code = generate_code(res);
-    let dummy_instance = quote! {
-        let dummy: FinalQueryResult = unsafe { std::mem::zeroed() };
-        dummy
-    };
+    // let res = analyze(tables, query.clone());
+    // let generated_code = generate_code(res);
+    // let dummy_instance = quote! {
+    //     let dummy: FinalQueryResult = unsafe { std::mem::zeroed() };
+    //     dummy
+    // };
 
     quote! {
         {
-            #generated_code
-            #dummy_instance
+
         }
     }
     .into()
