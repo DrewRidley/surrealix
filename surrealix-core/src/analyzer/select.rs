@@ -67,7 +67,10 @@ pub fn analyze_select(
         match &selected_type {
             TypeAST::Object(obj) => {
                 if let Some(field) = obj.fields.values().next() {
-                    field.ast.clone()
+                    match &field.ast {
+                        TypeAST::Array(boxed) => (*boxed).0.clone(),
+                        _ => field.ast.clone(),
+                    }
                 } else {
                     return Err(AnalyzeSelectError::InvalidFieldType);
                 }
@@ -108,7 +111,13 @@ fn apply_field_selection(
     expr: &Fields,
     omit: &Option<Idioms>,
 ) -> Result<TypeAST, AnalyzeSelectError> {
+    println!("Applying field selection");
+    println!("Base type: {:?}", base_type);
+    println!("Expression: {:?}", expr);
+    println!("Omit: {:?}", omit);
+
     let TypeAST::Object(base_obj) = base_type else {
+        println!("Error: Invalid field type");
         return Err(AnalyzeSelectError::InvalidFieldType);
     };
 
@@ -117,46 +126,72 @@ fn apply_field_selection(
     for field in &expr.0 {
         match field {
             Field::All => {
+                println!("Processing Field::All");
                 // Include all fields except those in the OMIT clause
                 for (name, field_info) in &base_obj.fields {
                     if !is_field_omitted(name, omit) {
+                        println!("Including field: {}", name);
                         result_fields.insert(name.clone(), field_info.clone());
+                    } else {
+                        println!("Omitting field: {}", name);
                     }
                 }
             }
             Field::Single { expr, alias } => match expr {
                 Value::Idiom(idiom) => {
+                    println!("Processing Field::Single with idiom: {:?}", idiom);
                     println!("Resolving graph traversal for idiom: {:?}", idiom);
-                    let (field_name, field_ast) =
+                    let (field_name, mut field_ast) =
                         resolve_graph_traversal(schema, base_type, idiom)?;
+                    println!("Resolved field name: {}", field_name);
+                    println!("Resolved field AST: {:?}", field_ast);
 
-                    let result_name = alias
-                        .as_ref()
-                        .map(|a| a.to_string())
-                        .unwrap_or(field_name.clone());
+                    // Keep array types intact
+                    let result_name = alias.as_ref().map(|a| a.to_string()).unwrap_or_else(|| {
+                        if field_name.starts_with("->") || field_name.starts_with("<-") {
+                            field_name
+                                .split("->")
+                                .last()
+                                .unwrap_or(&field_name)
+                                .to_string()
+                        } else {
+                            field_name.clone()
+                        }
+                    });
+                    println!("Result name: {}", result_name);
+
                     if !is_field_omitted(&result_name, omit) {
-                        result_fields.insert(
-                            result_name,
-                            FieldInfo {
-                                ast: field_ast,
-                                meta: FieldMetadata {
-                                    original_name: field_name,
-                                    original_path: idiom.0.iter().map(|p| p.to_string()).collect(),
-                                    permissions: Permissions::default(),
-                                },
+                        let field_info = FieldInfo {
+                            ast: field_ast, // Keep the original AST, including arrays
+                            meta: FieldMetadata {
+                                original_name: field_name.clone(),
+                                original_path: idiom.0.iter().map(|p| p.to_string()).collect(),
+                                permissions: Permissions::default(),
                             },
+                        };
+                        println!(
+                            "Inserting field: {} with AST: {:?}",
+                            result_name, field_info.ast
                         );
+                        result_fields.insert(result_name, field_info);
+                    } else {
+                        println!("Omitting field: {}", result_name);
                     }
                 }
                 _ => {
+                    println!("Error: Unsupported field expression");
                     return Err(AnalyzeSelectError::UnsupportedOperation(
                         "Unsupported field expression".to_string(),
-                    ))
+                    ));
                 }
             },
         }
     }
 
+    println!(
+        "Field selection complete. Result fields: {:?}",
+        result_fields.keys()
+    );
     Ok(TypeAST::Object(ObjectType {
         fields: result_fields,
     }))
@@ -169,25 +204,63 @@ fn resolve_graph_traversal(
 ) -> Result<(String, TypeAST), AnalyzeSelectError> {
     let mut current_type = base_type;
     let mut field_name = String::new();
+    let mut traversal_path = Vec::new();
 
     for (i, part) in idiom.0.iter().enumerate() {
         match part {
             Part::Field(ident) => {
                 field_name = ident.to_string();
-                if let TypeAST::Object(obj) = current_type {
-                    if let Some(field_info) = obj.fields.get(&field_name) {
-                        current_type = &field_info.ast;
-                    } else {
-                        println!("Encountered an unknown field in idiom: {:?}", field_name);
-                        return Err(AnalyzeSelectError::UnknownField(field_name));
+                match current_type {
+                    TypeAST::Object(obj) => {
+                        if let Some(field_info) = obj.fields.get(&field_name) {
+                            current_type = &field_info.ast;
+                            traversal_path.push(field_name.clone());
+                        } else {
+                            println!("Encountered an unknown field in idiom: {:?}", field_name);
+                            return Err(AnalyzeSelectError::UnknownField(field_name));
+                        }
                     }
-                } else {
-                    return Err(AnalyzeSelectError::InvalidFieldType);
+                    TypeAST::Array(boxed) => {
+                        // Handle array types
+                        current_type = &boxed.0;
+                        traversal_path.push(field_name.clone());
+                    }
+                    TypeAST::Record(record_type) => {
+                        // Handle record type by looking up the field in the schema
+                        if let TypeAST::Object(schema_obj) = schema {
+                            if let Some(record_info) = schema_obj.fields.get(record_type) {
+                                if let TypeAST::Object(record_obj) = &record_info.ast {
+                                    if let Some(field_info) = record_obj.fields.get(&field_name) {
+                                        current_type = &field_info.ast;
+                                        traversal_path.push(field_name.clone());
+                                    } else {
+                                        return Err(AnalyzeSelectError::UnknownField(field_name));
+                                    }
+                                } else {
+                                    return Err(AnalyzeSelectError::InvalidFieldType);
+                                }
+                            } else {
+                                return Err(AnalyzeSelectError::UnknownField(record_type.clone()));
+                            }
+                        } else {
+                            return Err(AnalyzeSelectError::InvalidSchema);
+                        }
+                    }
+                    _ => return Err(AnalyzeSelectError::InvalidFieldType),
                 }
             }
             Part::Graph(graph) => {
                 let edge_table = &graph.what.0[0].to_string();
-                field_name = format!("->{}", edge_table);
+                field_name = match graph.dir {
+                    surrealdb::sql::Dir::Out => format!("->{}", edge_table),
+                    surrealdb::sql::Dir::In => format!("<-{}", edge_table),
+                    _ => {
+                        return Err(AnalyzeSelectError::UnsupportedOperation(
+                            "Unsupported graph direction".to_string(),
+                        ))
+                    }
+                };
+                traversal_path.push(field_name.clone());
 
                 if let TypeAST::Object(schema_obj) = schema {
                     if let Some(edge_table_info) = schema_obj.fields.get(edge_table) {
@@ -206,7 +279,10 @@ fn resolve_graph_traversal(
 
                             if let Some(target_table_info) = schema_obj.fields.get(&target_table) {
                                 current_type = &target_table_info.ast;
-                                field_name = format!("{}->{}.*", field_name, target_table);
+                                if relation_field != "id" {
+                                    traversal_path.push(relation_field);
+                                }
+                                traversal_path.push(target_table.clone());
                             } else {
                                 return Err(AnalyzeSelectError::UnknownField(target_table.clone()));
                             }
@@ -222,7 +298,11 @@ fn resolve_graph_traversal(
             }
             Part::All if i == idiom.0.len() - 1 => {
                 // We've reached the end of the traversal, return the current type
-                return Ok((field_name, current_type.clone()));
+                traversal_path.push("*".to_string());
+                return Ok((
+                    traversal_path.join("->"),
+                    TypeAST::Array(Box::new((current_type.clone(), None))),
+                ));
             }
             _ => {
                 return Err(AnalyzeSelectError::UnsupportedOperation(format!(
@@ -233,13 +313,27 @@ fn resolve_graph_traversal(
         }
     }
 
-    Ok((field_name, current_type.clone()))
+    // If we've reached here, it's a regular field selection or a graph traversal without a wildcard
+    let final_type = if traversal_path.len() > 1 {
+        // It's a graph traversal, so wrap it in an array
+        TypeAST::Array(Box::new((current_type.clone(), None)))
+    } else {
+        // It's a regular field selection, return as is
+        current_type.clone()
+    };
+
+    Ok((traversal_path.join("->"), final_type))
 }
 
 fn find_relation_field(
     edge_obj: &ObjectType,
     dir: &surrealdb::sql::Dir,
 ) -> Result<(String, String), AnalyzeSelectError> {
+    // Handle the case when dealing with the user table
+    if edge_obj.fields.contains_key("id") {
+        return Ok(("id".to_string(), "user".to_string()));
+    }
+
     let (primary, fallback) = match dir {
         surrealdb::sql::Dir::Out => ("out", "in"),
         surrealdb::sql::Dir::In => ("in", "out"),
@@ -250,24 +344,24 @@ fn find_relation_field(
         }
     };
 
-    if let Some(field) = edge_obj
-        .fields
-        .get(primary)
-        .or_else(|| edge_obj.fields.get(fallback))
-    {
-        if let TypeAST::Record(target_table) = &field.ast {
-            Ok((
-                field.meta.original_name.to_string(),
-                target_table.to_string(),
-            ))
-        } else {
-            Err(AnalyzeSelectError::InvalidFieldType)
+    let primary_field = edge_obj.fields.get(primary);
+    let fallback_field = edge_obj.fields.get(fallback);
+
+    match (primary_field, fallback_field) {
+        (Some(field), _) | (None, Some(field)) => {
+            if let TypeAST::Record(target_table) = &field.ast {
+                Ok((
+                    field.meta.original_name.to_string(),
+                    target_table.to_string(),
+                ))
+            } else {
+                Err(AnalyzeSelectError::InvalidFieldType)
+            }
         }
-    } else {
-        Err(AnalyzeSelectError::UnknownField(format!(
-            "Neither '{}' nor '{}' field found",
+        (None, None) => Err(AnalyzeSelectError::UnknownField(format!(
+            "Neither '{}' nor '{}' field found in edge object",
             primary, fallback
-        )))
+        ))),
     }
 }
 
@@ -552,10 +646,121 @@ mod tests {
     }
 
     #[test]
-    fn demo() {
+    fn test_graph_traversal_out() {
         let schema = create_test_schema();
-        let query = "SELECT name, age as renamedAge, address, ->friend->user.* FROM user;";
-        let stmt = parse_select(query);
+        let stmt = parse_select("SELECT name, ->friend->user.name as friend_names FROM user");
+
         let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("friend_names"));
+
+        let TypeAST::Array(friends_arr) = &obj.fields["friend_names"].ast else {
+            panic!("Expected Array TypeAST for friend_names");
+        };
+
+        assert!(matches!(friends_arr.0, TypeAST::Scalar(ScalarType::String)));
+    }
+
+    #[test]
+    fn test_graph_traversal_in() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT name, <-friend<-user.name as follower_names FROM user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("follower_names"));
+
+        let TypeAST::Array(followers_arr) = &obj.fields["follower_names"].ast else {
+            panic!("Expected Array TypeAST for follower_names");
+        };
+
+        assert!(matches!(
+            followers_arr.0,
+            TypeAST::Scalar(ScalarType::String)
+        ));
+    }
+
+    #[test]
+    fn test_graph_traversal_multi_hop() {
+        let schema = create_test_schema();
+        let stmt = parse_select(
+            "SELECT name, ->friend->user->friend->user.name as friend_of_friend_names FROM user",
+        );
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("friend_of_friend_names"));
+
+        let TypeAST::Array(fof_arr) = &obj.fields["friend_of_friend_names"].ast else {
+            panic!("Expected Array TypeAST for friend_of_friend_names");
+        };
+
+        assert!(matches!(fof_arr.0, TypeAST::Scalar(ScalarType::String)));
+    }
+
+    #[test]
+    fn test_graph_traversal() {
+        let schema = create_test_schema();
+        let stmt = parse_select("SELECT name, ->friend->user.* as friends FROM user");
+
+        let result = analyze_select(&schema, &stmt).unwrap();
+
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("friends"));
+
+        let TypeAST::Array(friends_arr) = &obj.fields["friends"].ast else {
+            panic!("Expected Array TypeAST for friends");
+        };
+
+        let TypeAST::Object(friends_obj) = &friends_arr.0 else {
+            panic!("Expected Object inside Array for friends");
+        };
+
+        // Check that the friends object contains user fields
+        assert!(friends_obj.fields.contains_key("id"));
+        assert!(friends_obj.fields.contains_key("name"));
+        assert!(friends_obj.fields.contains_key("age"));
+        assert!(friends_obj.fields.contains_key("address"));
+        assert!(friends_obj.fields.contains_key("tags"));
+        assert!(friends_obj.fields.contains_key("best_friend"));
     }
 }
