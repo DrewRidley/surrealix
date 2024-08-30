@@ -151,15 +151,15 @@ pub fn query(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as QueryItem);
     let query = input.content;
 
-    let schema = match fetch_schema() {
-        Ok(schema) => schema,
-        Err(e) => {
-            let error_message = e.to_string();
-            return TokenStream::from(quote! {
-                compile_error!(#error_message);
-            });
-        }
-    };
+    // let schema = match fetch_schema() {
+    //     Ok(schema) => schema,
+    //     Err(e) => {
+    //         let error_message = e.to_string();
+    //         return TokenStream::from(quote! {
+    //             compile_error!(#error_message);
+    //         });
+    //     }
+    // };
 
     // Parse schema into definitions.
     //let tables = parse_schema(&schema).unwrap();
