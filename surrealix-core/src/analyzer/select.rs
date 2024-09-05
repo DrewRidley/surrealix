@@ -27,6 +27,8 @@ pub fn analyze_select(
         return Err(AnalyzeSelectError::InvalidSchema);
     };
 
+    println!("Analyzing select for schema: \n{:#?}", schema);
+
     // Step 1: Analyze the 'FROM' clause
     let base_type = analyze_from(&schema_obj, &stmt.what)?;
 
@@ -95,7 +97,7 @@ fn analyze_from(schema: &ObjectType, what: &[Value]) -> Result<TypeAST, AnalyzeS
     if let Some(Value::Table(table)) = what.first() {
         schema
             .fields
-            .get(&table.to_string())
+            .get(&table.to_string().to_lowercase())
             .map(|field_info| field_info.ast.clone())
             .ok_or_else(|| AnalyzeSelectError::UnknownField(table.to_string()))
     } else {
@@ -121,6 +123,14 @@ fn apply_field_selection(
         return Err(AnalyzeSelectError::InvalidFieldType);
     };
 
+    // Extract the table name from the base_type
+    let table_name = base_obj
+        .fields
+        .values()
+        .next()
+        .and_then(|field| field.meta.original_path.first().cloned())
+        .unwrap_or_else(|| "unknown".to_string());
+
     let mut result_fields = HashMap::new();
 
     for field in &expr.0 {
@@ -131,7 +141,12 @@ fn apply_field_selection(
                 for (name, field_info) in &base_obj.fields {
                     if !is_field_omitted(name, omit) {
                         println!("Including field: {}", name);
-                        result_fields.insert(name.clone(), field_info.clone());
+                        let mut new_field_info = field_info.clone();
+                        new_field_info
+                            .meta
+                            .original_path
+                            .insert(0, table_name.clone());
+                        result_fields.insert(name.clone(), new_field_info);
                     } else {
                         println!("Omitting field: {}", name);
                     }
@@ -141,12 +156,11 @@ fn apply_field_selection(
                 Value::Idiom(idiom) => {
                     println!("Processing Field::Single with idiom: {:?}", idiom);
                     println!("Resolving graph traversal for idiom: {:?}", idiom);
-                    let (field_name, mut field_ast) =
+                    let (field_name, field_ast) =
                         resolve_graph_traversal(schema, base_type, idiom)?;
                     println!("Resolved field name: {}", field_name);
                     println!("Resolved field AST: {:?}", field_ast);
 
-                    // Keep array types intact
                     let result_name = alias.as_ref().map(|a| a.to_string()).unwrap_or_else(|| {
                         if field_name.starts_with("->") || field_name.starts_with("<-") {
                             field_name
@@ -161,11 +175,13 @@ fn apply_field_selection(
                     println!("Result name: {}", result_name);
 
                     if !is_field_omitted(&result_name, omit) {
+                        let mut original_path = vec![table_name.clone()];
+                        original_path.extend(idiom.0.iter().map(|p| p.to_string()));
                         let field_info = FieldInfo {
-                            ast: field_ast, // Keep the original AST, including arrays
+                            ast: field_ast,
                             meta: FieldMetadata {
                                 original_name: field_name.clone(),
-                                original_path: idiom.0.iter().map(|p| p.to_string()).collect(),
+                                original_path,
                                 permissions: Permissions::default(),
                             },
                         };
@@ -237,6 +253,7 @@ fn resolve_graph_traversal(
                                         return Err(AnalyzeSelectError::UnknownField(field_name));
                                     }
                                 } else {
+                                    println!("Got non object for record: \n{:?}", &record_info.ast);
                                     return Err(AnalyzeSelectError::InvalidFieldType);
                                 }
                             } else {
@@ -246,7 +263,10 @@ fn resolve_graph_traversal(
                             return Err(AnalyzeSelectError::InvalidSchema);
                         }
                     }
-                    _ => return Err(AnalyzeSelectError::InvalidFieldType),
+                    _ => {
+                        println!("Weird case");
+                        return Err(AnalyzeSelectError::InvalidFieldType);
+                    }
                 }
             }
             Part::Graph(graph) => {

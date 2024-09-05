@@ -110,16 +110,20 @@ fn apply_field_definition(
         ));
     };
 
+    let table_name = field_def.what.as_str().to_lowercase();
     let mut curr = schema
         .fields
-        .get_mut(field_def.what.as_str())
+        .get_mut(&table_name)
         .ok_or_else(|| SchemaParseError::NonExistentTableReference(field_def.what.to_string()))?;
 
     let parts = &field_def.name.0;
+    let mut current_path = vec![table_name.clone()];
+
     for part in &parts[..parts.len() - 1] {
         match part {
             surrealdb::sql::Part::Field(ident) => {
                 let field_name = ident.to_string();
+                current_path.push(field_name.clone());
                 match &mut curr.ast {
                     TypeAST::Object(obj) => {
                         curr = obj
@@ -129,7 +133,7 @@ fn apply_field_definition(
                                 ast: TypeAST::Object(ObjectType::default()),
                                 meta: FieldMetadata {
                                     original_name: field_name.clone(),
-                                    original_path: vec![field_name.clone()],
+                                    original_path: current_path.clone(),
                                     permissions: field_def.permissions.clone(),
                                 },
                             });
@@ -169,6 +173,7 @@ fn apply_field_definition(
         }
         surrealdb::sql::Part::Field(ident) => {
             let field_name = ident.to_string();
+            current_path.push(field_name.clone());
             if let TypeAST::Object(obj) = &mut curr.ast {
                 let new_field = FieldInfo {
                     ast: if field_def
@@ -182,7 +187,7 @@ fn apply_field_definition(
                     },
                     meta: FieldMetadata {
                         original_name: field_name.clone(),
-                        original_path: parts.iter().map(|p| p.to_string()).collect(),
+                        original_path: current_path,
                         permissions: field_def.permissions.clone(),
                     },
                 };

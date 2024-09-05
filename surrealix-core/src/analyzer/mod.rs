@@ -1,13 +1,14 @@
-mod create;
-mod delete;
-mod function;
-mod insert;
-mod relate;
+// mod create;
+// mod delete;
+// mod function;
+// mod insert;
+// mod relate;
 mod select;
-mod update;
+// mod update;
 
 use crate::{
     ast::TypeAST,
+    schema::analyze_schema,
     types::{QueryType, TypedQuery},
 };
 use select::analyze_select;
@@ -22,11 +23,11 @@ pub type Tables = HashMap<String, TypeAST>;
 /// This TypeAST encompasses all transformations performed by the query on the base schema.
 /// There may be gaps in the analysis, represented by [ScalarType::Any].
 pub fn analyze(schema: Query, query: Query) -> Vec<TypeAST> {
-    let parsed_schema: TypeAST = TypeAST::Scalar(crate::ast::ScalarType::Any);
+    let parsed = analyze_schema(schema).unwrap();
 
-    schema
+    query
         .iter()
-        .map(|stmt| analyze_statement(&parsed_schema, stmt))
+        .map(|q| analyze_statement(&parsed, &q))
         .collect()
 }
 
@@ -37,6 +38,6 @@ pub fn analyze(schema: Query, query: Query) -> Vec<TypeAST> {
 fn analyze_statement(base_type: &TypeAST, stmt: &Statement) -> TypeAST {
     match stmt {
         Statement::Select(sel_stmt) => analyze_select(base_type, sel_stmt).unwrap(),
-        _ => todo!(),
+        _ => todo!("Statement: {:?} is not supported", stmt),
     }
 }

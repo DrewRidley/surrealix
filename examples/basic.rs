@@ -1,46 +1,45 @@
 use dotenv::dotenv;
-use surrealix_macros::query;
+use surrealix_macros::{build_query, query};
 
-// queryType!(User, "SELECT * FROM user;");
+build_query! {
+    AdultUsers,
+    "SELECT * FROM user WHERE age > 18;"
+}
 
 fn main() {
-    let results = query! {
-        r#"
-            SELECT age as renamedAge FROM user:123;
-            SELECT * FROM user;
-        "#
-    };
-
-    /*
-        An example of what a strongly typed query might look like.
-        Super experimental so it is very subject to change.
-
-        Lets take this example where 'ssn' and 'dob' are only accessible to the users own record.
-        All other records will be covered by IAM logic.
-
-        In this instance, lets say 'ssn' and 'dob' have shared permissions logic. It should be possible to group them
-        accordingly.
-
-        enum UserResult {
-            SSNDobUser {
-                ssn,
-                dob,
-                friends
-            },
-            User {
-
-            }
-        }
-
-        query! {
-            SELECT ssn, dob, ->friend->user.* as friends FROM user;
-        }
-
-
-    */
+    let users = AdultUsers::execute().unwrap();
 }
 
 /*
+    An example of what a strongly typed query might look like.
+    Super experimental so it is very subject to change.
+
+    Lets take this example where 'ssn' and 'dob' are only accessible to the users own record.
+    All other records will be covered by IAM logic.
+
+    In this instance, lets say 'ssn' and 'dob' have shared permissions logic. It should be possible to group them
+    accordingly.
+
+    enum UserResult {
+        SSNDobUser {
+            ssn,
+            dob,
+            friends
+        },
+        User {
+
+        }
+    }
+
+    query! {
+        SELECT ssn, dob, ->friend->user.* as friends FROM user;
+    }
+
+
+*/
+
+/*
+
 
 SELECT
     name,
