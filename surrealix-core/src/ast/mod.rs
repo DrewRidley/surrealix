@@ -3,16 +3,6 @@ use std::{collections::HashMap, num::NonZeroU64};
 use surrealdb::sql::{Fields, Idiom, Kind, Part, Permissions, Value};
 use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum AstError {
-    #[error("Unknown field: {0}")]
-    UnknownField(String),
-    #[error("Invalid field type")]
-    InvalidFieldType,
-    #[error("Unsupported operation: {0}")]
-    UnsupportedOperation(String),
-}
-
 #[derive(Clone, PartialEq, Eq)]
 pub enum TypeAST {
     Scalar(ScalarType),
@@ -23,8 +13,28 @@ pub enum TypeAST {
     Union(Vec<TypeAST>),
 }
 
+#[derive(Error, Debug)]
+pub enum ResolverError {
+    #[error("The field '{0}' does not exist on: '{1}'")]
+    UnknownField(String, String),
+    #[error("A record link to '{0}' was encountered, but this table isn't defined!")]
+    BadRecordLink(String),
+    #[error(
+        "The path provided, '{0}' cannot be selected because the root type, '{1}' is not an object"
+    )]
+    InvalidPath(String, String),
+    #[error(
+        "
+            The path provided, '{0}' was interrupted during traversal.
+            The analyzer attempted to recurse further, but encountered a non-object.
+            Please check your schema and ensure your query logic is correct.
+        "
+    )]
+    InterruptedTraversal(String),
+}
+
 impl TypeAST {
-    pub fn resolve_fields(&self, fields: &Fields) -> Result<TypeAST, AstError> {
+    pub fn resolve_fields(&self, fields: &Fields) -> Result<TypeAST, ResolverError> {
         match self {
             TypeAST::Object(obj) => {
                 let mut result = ObjectType {
@@ -44,7 +54,10 @@ impl TypeAST {
                                         alias.as_ref().map(|a| a.to_string()).unwrap_or(field_name);
                                     result.fields.insert(result_name, field_info.clone());
                                 } else {
-                                    return Err(AstError::UnknownField(field_name));
+                                    return Err(ResolverError::InvalidPath(
+                                        field_name,
+                                        format!("{:?}", &self),
+                                    ));
                                 }
                             }
                         }
@@ -52,11 +65,14 @@ impl TypeAST {
                 }
                 Ok(TypeAST::Object(result))
             }
-            _ => Err(AstError::InvalidFieldType),
+            _ => Err(ResolverError::InvalidPath(
+                fields.to_string(),
+                format!("{:?}", &self),
+            )),
         }
     }
 
-    pub fn resolve_idiom(&self, idiom: &Idiom) -> Result<&TypeAST, AstError> {
+    pub fn resolve_idiom(&self, idiom: &Idiom) -> Result<&TypeAST, ResolverError> {
         let mut current = self;
         for part in &idiom.0 {
             match (current, part) {
@@ -65,19 +81,22 @@ impl TypeAST {
                     if let Some(field_info) = obj.fields.get(&field_name) {
                         current = &field_info.ast;
                     } else {
-                        return Err(AstError::UnknownField(field_name));
+                        return Err(ResolverError::InvalidPath(
+                            field_name,
+                            format!("{:?}", &self),
+                        ));
                     }
                 }
                 (TypeAST::Array(boxed), Part::All) => {
                     current = &boxed.0;
                 }
-                _ => return Err(AstError::InvalidFieldType),
+                _ => return Err(ResolverError::InterruptedTraversal(idiom.to_string())),
             }
         }
         Ok(current)
     }
 
-    pub fn replace_record_links(&mut self, schema: &TypeAST) -> Result<(), AstError> {
+    pub fn replace_record_links(&mut self, schema: &TypeAST) -> Result<(), ResolverError> {
         match self {
             TypeAST::Object(obj) => {
                 for field_info in obj.fields.values_mut() {
@@ -92,7 +111,7 @@ impl TypeAST {
                     if let Some(table_ast) = schema_obj.fields.get(table_name) {
                         *self = table_ast.ast.clone();
                     } else {
-                        return Err(AstError::UnknownField(table_name.clone()));
+                        return Err(ResolverError::BadRecordLink(table_name.clone()));
                     }
                 }
             }

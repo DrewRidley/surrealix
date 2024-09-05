@@ -1,60 +1,47 @@
-use crate::ast::{AstError, FieldInfo, FieldMetadata, ObjectType, ScalarType, TypeAST};
+use crate::{
+    ast::{FieldInfo, FieldMetadata, ObjectType, ResolverError, ScalarType, TypeAST},
+    errors::AnalysisError,
+};
 use std::collections::HashMap;
 use surrealdb::sql::{
     statements::SelectStatement, Fetchs, Field, Fields, Idiom, Idioms, Part, Permissions, Value,
 };
 use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum AnalyzeSelectError {
-    #[error("Schema provided is not an object")]
-    InvalidSchema,
-    #[error("Unknown field: {0}")]
-    UnknownField(String),
-    #[error("Invalid field type")]
-    InvalidFieldType,
-    #[error("Unsupported operation: {0}")]
-    UnsupportedOperation(String),
-    #[error(transparent)]
-    AstError(#[from] AstError),
-}
-
-pub fn analyze_select(
-    schema: &TypeAST,
-    stmt: &SelectStatement,
-) -> Result<TypeAST, AnalyzeSelectError> {
+pub fn analyze_select(schema: &TypeAST, stmt: &SelectStatement) -> Result<TypeAST, AnalysisError> {
     let TypeAST::Object(schema_obj) = schema else {
-        return Err(AnalyzeSelectError::InvalidSchema);
+        return Err(AnalysisError::UnsupportedType(format!(
+            "Schema was not an object! This should not be possible. Please file a bug report."
+        )));
     };
 
-    println!("Analyzing select for schema: \n{:#?}", schema);
-
-    // Step 1: Analyze the 'FROM' clause
     let base_type = analyze_from(&schema_obj, &stmt.what)?;
 
-    // Step 2: Apply field selection
-    let mut selected_type = apply_field_selection(schema, &base_type, &stmt.expr, &stmt.omit)?;
+    let mut selected_type = apply_field_selection(schema, &base_type, &stmt.expr, &stmt.omit)
+        .map_err(|e| AnalysisError::UnsupportedOperation(e.to_string()))?;
 
-    // Step 3: Apply fetch
     if let Some(fetch) = &stmt.fetch {
         for fetch_item in &fetch.0 {
-            let fetched_ast = selected_type.resolve_idiom(&fetch_item.0)?;
+            let fetched_ast = selected_type
+                .resolve_idiom(&fetch_item.0)
+                .map_err(|e| AnalysisError::ResolverFailure(e))?;
             match fetched_ast {
                 TypeAST::Record(_) => {
-                    selected_type.replace_record_links(schema)?;
+                    selected_type
+                        .replace_record_links(schema)
+                        .map_err(|e| AnalysisError::ResolverFailure(e))?;
                 }
                 TypeAST::Array(boxed) => {
                     if let TypeAST::Record(_) = boxed.0 {
                         selected_type.replace_record_links(schema)?;
                     } else {
-                        return Err(AnalyzeSelectError::UnsupportedOperation(format!(
+                        return Err(AnalysisError::UnsupportedOperation(format!(
                             "Unsupported fetch type: {:?}",
                             boxed.0
                         )));
                     }
                 }
                 _ => {
-                    return Err(AnalyzeSelectError::UnsupportedOperation(format!(
+                    return Err(AnalysisError::UnsupportedOperation(format!(
                         "Unsupported fetch type: {:?}",
                         fetched_ast
                     )));
@@ -74,10 +61,16 @@ pub fn analyze_select(
                         _ => field.ast.clone(),
                     }
                 } else {
-                    return Err(AnalyzeSelectError::InvalidFieldType);
+                    return Err(AnalysisError::UnsupportedType(format!(
+                        "'VALUE' cannot be used on an empty object!"
+                    )));
                 }
             }
-            _ => return Err(AnalyzeSelectError::InvalidFieldType),
+            _ => {
+                return Err(AnalysisError::UnsupportedType(format!(
+                    "'VALUE' cannot select from a non-table type."
+                )))
+            }
         }
     } else {
         selected_type
@@ -93,15 +86,15 @@ pub fn analyze_select(
     Ok(final_type)
 }
 
-fn analyze_from(schema: &ObjectType, what: &[Value]) -> Result<TypeAST, AnalyzeSelectError> {
+fn analyze_from(schema: &ObjectType, what: &[Value]) -> Result<TypeAST, AnalysisError> {
     if let Some(Value::Table(table)) = what.first() {
         schema
             .fields
             .get(&table.to_string().to_lowercase())
             .map(|field_info| field_info.ast.clone())
-            .ok_or_else(|| AnalyzeSelectError::UnknownField(table.to_string()))
+            .ok_or_else(|| AnalysisError::UnknownField(table.to_string()))
     } else {
-        Err(AnalyzeSelectError::UnsupportedOperation(
+        Err(AnalysisError::UnsupportedOperation(
             "Unsupported FROM clause".to_string(),
         ))
     }
@@ -112,15 +105,11 @@ fn apply_field_selection(
     base_type: &TypeAST,
     expr: &Fields,
     omit: &Option<Idioms>,
-) -> Result<TypeAST, AnalyzeSelectError> {
-    println!("Applying field selection");
-    println!("Base type: {:?}", base_type);
-    println!("Expression: {:?}", expr);
-    println!("Omit: {:?}", omit);
-
+) -> Result<TypeAST, AnalysisError> {
     let TypeAST::Object(base_obj) = base_type else {
-        println!("Error: Invalid field type");
-        return Err(AnalyzeSelectError::InvalidFieldType);
+        return Err(AnalysisError::UnsupportedType(format!(
+            "Selected from a non-object type!"
+        )));
     };
 
     // Extract the table name from the base_type
@@ -136,30 +125,22 @@ fn apply_field_selection(
     for field in &expr.0 {
         match field {
             Field::All => {
-                println!("Processing Field::All");
                 // Include all fields except those in the OMIT clause
                 for (name, field_info) in &base_obj.fields {
                     if !is_field_omitted(name, omit) {
-                        println!("Including field: {}", name);
                         let mut new_field_info = field_info.clone();
                         new_field_info
                             .meta
                             .original_path
                             .insert(0, table_name.clone());
                         result_fields.insert(name.clone(), new_field_info);
-                    } else {
-                        println!("Omitting field: {}", name);
                     }
                 }
             }
             Field::Single { expr, alias } => match expr {
                 Value::Idiom(idiom) => {
-                    println!("Processing Field::Single with idiom: {:?}", idiom);
-                    println!("Resolving graph traversal for idiom: {:?}", idiom);
                     let (field_name, field_ast) =
                         resolve_graph_traversal(schema, base_type, idiom)?;
-                    println!("Resolved field name: {}", field_name);
-                    println!("Resolved field AST: {:?}", field_ast);
 
                     let result_name = alias.as_ref().map(|a| a.to_string()).unwrap_or_else(|| {
                         if field_name.starts_with("->") || field_name.starts_with("<-") {
@@ -172,7 +153,6 @@ fn apply_field_selection(
                             field_name.clone()
                         }
                     });
-                    println!("Result name: {}", result_name);
 
                     if !is_field_omitted(&result_name, omit) {
                         let mut original_path = vec![table_name.clone()];
@@ -185,18 +165,12 @@ fn apply_field_selection(
                                 permissions: Permissions::default(),
                             },
                         };
-                        println!(
-                            "Inserting field: {} with AST: {:?}",
-                            result_name, field_info.ast
-                        );
+
                         result_fields.insert(result_name, field_info);
-                    } else {
-                        println!("Omitting field: {}", result_name);
                     }
                 }
                 _ => {
-                    println!("Error: Unsupported field expression");
-                    return Err(AnalyzeSelectError::UnsupportedOperation(
+                    return Err(AnalysisError::UnsupportedOperation(
                         "Unsupported field expression".to_string(),
                     ));
                 }
@@ -204,10 +178,6 @@ fn apply_field_selection(
         }
     }
 
-    println!(
-        "Field selection complete. Result fields: {:?}",
-        result_fields.keys()
-    );
     Ok(TypeAST::Object(ObjectType {
         fields: result_fields,
     }))
@@ -217,7 +187,7 @@ fn resolve_graph_traversal(
     schema: &TypeAST,
     base_type: &TypeAST,
     idiom: &Idiom,
-) -> Result<(String, TypeAST), AnalyzeSelectError> {
+) -> Result<(String, TypeAST), AnalysisError> {
     let mut current_type = base_type;
     let mut field_name = String::new();
     let mut traversal_path = Vec::new();
@@ -232,8 +202,7 @@ fn resolve_graph_traversal(
                             current_type = &field_info.ast;
                             traversal_path.push(field_name.clone());
                         } else {
-                            println!("Encountered an unknown field in idiom: {:?}", field_name);
-                            return Err(AnalyzeSelectError::UnknownField(field_name));
+                            return Err(AnalysisError::UnknownField(field_name));
                         }
                     }
                     TypeAST::Array(boxed) => {
@@ -250,22 +219,24 @@ fn resolve_graph_traversal(
                                         current_type = &field_info.ast;
                                         traversal_path.push(field_name.clone());
                                     } else {
-                                        return Err(AnalyzeSelectError::UnknownField(field_name));
+                                        return Err(AnalysisError::UnknownField(field_name));
                                     }
                                 } else {
-                                    println!("Got non object for record: \n{:?}", &record_info.ast);
-                                    return Err(AnalyzeSelectError::InvalidFieldType);
+                                    return Err(AnalysisError::UnsupportedType(format!(
+                                        "Got non-object where an object was expected in graph traversal!"
+                                    )));
                                 }
                             } else {
-                                return Err(AnalyzeSelectError::UnknownField(record_type.clone()));
+                                return Err(AnalysisError::UnknownField(record_type.clone()));
                             }
                         } else {
-                            return Err(AnalyzeSelectError::InvalidSchema);
+                            return Err(AnalysisError::UnsupportedOperation(format!("Found a record link to a non-object type. The Schema is likely invalid.")));
                         }
                     }
                     _ => {
-                        println!("Weird case");
-                        return Err(AnalyzeSelectError::InvalidFieldType);
+                        return Err(AnalysisError::UnsupportedType(format!(
+                            "Graph traversal encountered invalid type."
+                        )));
                     }
                 }
             }
@@ -275,7 +246,7 @@ fn resolve_graph_traversal(
                     surrealdb::sql::Dir::Out => format!("->{}", edge_table),
                     surrealdb::sql::Dir::In => format!("<-{}", edge_table),
                     _ => {
-                        return Err(AnalyzeSelectError::UnsupportedOperation(
+                        return Err(AnalysisError::UnsupportedOperation(
                             "Unsupported graph direction".to_string(),
                         ))
                     }
@@ -285,17 +256,8 @@ fn resolve_graph_traversal(
                 if let TypeAST::Object(schema_obj) = schema {
                     if let Some(edge_table_info) = schema_obj.fields.get(edge_table) {
                         if let TypeAST::Object(edge_obj) = &edge_table_info.ast {
-                            println!(
-                                "Edge table '{}' fields: {:?}",
-                                edge_table,
-                                edge_obj.fields.keys().collect::<Vec<_>>()
-                            );
-
                             let (relation_field, target_table) =
                                 find_relation_field(edge_obj, &graph.dir)?;
-
-                            println!("Found relation field: {}", relation_field);
-                            println!("Target table: {}", target_table);
 
                             if let Some(target_table_info) = schema_obj.fields.get(&target_table) {
                                 current_type = &target_table_info.ast;
@@ -304,16 +266,20 @@ fn resolve_graph_traversal(
                                 }
                                 traversal_path.push(target_table.clone());
                             } else {
-                                return Err(AnalyzeSelectError::UnknownField(target_table.clone()));
+                                return Err(AnalysisError::UnknownField(target_table.clone()));
                             }
                         } else {
-                            return Err(AnalyzeSelectError::InvalidFieldType);
+                            return Err(AnalysisError::UnsupportedType(format!(
+                                "Edge table of graph traversal is not an object!"
+                            )));
                         }
                     } else {
-                        return Err(AnalyzeSelectError::UnknownField(edge_table.clone()));
+                        return Err(AnalysisError::UnknownField(edge_table.clone()));
                     }
                 } else {
-                    return Err(AnalyzeSelectError::InvalidSchema);
+                    return Err(AnalysisError::UnsupportedType(format!(
+                        "Schema is not an object!"
+                    )));
                 }
             }
             Part::All if i == idiom.0.len() - 1 => {
@@ -325,7 +291,7 @@ fn resolve_graph_traversal(
                 ));
             }
             _ => {
-                return Err(AnalyzeSelectError::UnsupportedOperation(format!(
+                return Err(AnalysisError::UnsupportedOperation(format!(
                     "Unsupported graph traversal part: {:?}",
                     part
                 )))
@@ -348,7 +314,7 @@ fn resolve_graph_traversal(
 fn find_relation_field(
     edge_obj: &ObjectType,
     dir: &surrealdb::sql::Dir,
-) -> Result<(String, String), AnalyzeSelectError> {
+) -> Result<(String, String), AnalysisError> {
     // Handle the case when dealing with the user table
     if edge_obj.fields.contains_key("id") {
         return Ok(("id".to_string(), "user".to_string()));
@@ -358,7 +324,7 @@ fn find_relation_field(
         surrealdb::sql::Dir::Out => ("out", "in"),
         surrealdb::sql::Dir::In => ("in", "out"),
         _ => {
-            return Err(AnalyzeSelectError::UnsupportedOperation(
+            return Err(AnalysisError::UnsupportedOperation(
                 "Unsupported graph direction".to_string(),
             ))
         }
@@ -375,10 +341,12 @@ fn find_relation_field(
                     target_table.to_string(),
                 ))
             } else {
-                Err(AnalyzeSelectError::InvalidFieldType)
+                Err(AnalysisError::UnsupportedType(format!(
+                    "Expected a record link but found other type."
+                )))
             }
         }
-        (None, None) => Err(AnalyzeSelectError::UnknownField(format!(
+        (None, None) => Err(AnalysisError::UnknownField(format!(
             "Neither '{}' nor '{}' field found in edge object",
             primary, fallback
         ))),

@@ -1,14 +1,12 @@
 use dotenv::dotenv;
-use surrealix_macros::{build_query, query};
+use surrealix_macros::build_query;
 
 build_query! {
     AdultUsers,
-    "SELECT * FROM user WHERE age > 18;"
+    "SELECT name FROM user WHERE age > 18;"
 }
 
-fn main() {
-    let users = AdultUsers::execute().unwrap();
-}
+fn main() {}
 
 /*
     An example of what a strongly typed query might look like.

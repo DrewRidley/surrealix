@@ -1,3 +1,6 @@
+use std::{env, path::PathBuf};
+use surrealix_core::errors::SchemaError;
+use thiserror::Error;
 
 fn load_env() -> Result<(), SchemaError> {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR")
@@ -9,7 +12,7 @@ fn load_env() -> Result<(), SchemaError> {
     Ok(())
 }
 
-fn fetch_schema() -> Result<String, SchemaError> {
+pub fn load_schema() -> Result<String, SchemaError> {
     load_env()?;
 
     // Fallback to schema file in debug mode, or primary method in release mode
@@ -26,5 +29,5 @@ fn fetch_schema() -> Result<String, SchemaError> {
         PathBuf::from(path)
     };
 
-    fs::read_to_string(path).map_err(SchemaError::FileReadError)
+    std::fs::read_to_string(path).map_err(SchemaError::FileReadError)
 }

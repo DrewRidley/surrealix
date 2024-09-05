@@ -14,4 +14,4 @@ surrealdb = "1.5.4"
 thiserror = "1.0.63"
 serde = { version = "*", optional = true }
 serde_json = { version = "*", optional = true }
-chrono = "0.4.38"
+dotenv = "0.15.0"
