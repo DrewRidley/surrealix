@@ -1,1 +1,1 @@
-
+pub use surrealdb::Error;

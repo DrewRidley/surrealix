@@ -35,12 +35,14 @@ pub fn generate_code(
     let mut type_aliases = Vec::new();
     let mut generated_types = HashMap::new();
 
+    // Generate type definitions and aliases
     for (index, ast) in analyzed.iter().enumerate() {
         let (type_name, type_def) = generate_type_definition(ast, &mut generated_types);
         type_definitions.extend(type_def);
 
+        let module_name = format_ident!("{}", input.name.to_string().to_case(Case::Snake));
         let alias_name = if analyzed.len() == 1 {
-            format_ident!("QueryResult")
+            format_ident!("QueryResult") // Just QueryResult, we'll qualify it later
         } else {
             format_ident!("QueryResult{}", index + 1)
         };
@@ -51,15 +53,14 @@ pub fn generate_code(
         type_aliases.push(alias);
     }
 
-    let module_name = format_ident!("adult_users");
-    let alias_name = format_ident!("AdultUsers");
+    let module_name = format_ident!("{}", input.name.to_string().to_case(Case::Snake));
+    let struct_name = &input.name;
 
     let generated_code = quote! {
-        pub struct #alias_name;
+        pub struct #struct_name;
 
-        impl #alias_name {
-            pub fn execute() -> Result<QueryResult, surrealix::Error> {
-                // Implementation of execute method
+        impl #struct_name {
+            pub fn execute() -> Result<#module_name::QueryResult, surrealix::Error> {
                 todo!("Implement execute method")
             }
         }

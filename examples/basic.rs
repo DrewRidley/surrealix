@@ -3,10 +3,17 @@ use surrealix_macros::build_query;
 
 build_query! {
     AdultUsers,
-    "SELECT name FROM user WHERE age > 18;"
+    "SELECT * FROM user WHERE age > 18;"
 }
 
-fn main() {}
+fn main() {
+    let data = AdultUsers::execute().unwrap();
+
+    for entry in data {
+        let name = entry.name;
+        let age = entry.age;
+    }
+}
 
 /*
     An example of what a strongly typed query might look like.
