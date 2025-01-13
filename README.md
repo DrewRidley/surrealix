@@ -141,7 +141,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- [Issues](https://github.com/yourusername/surrealix/issues)
-- [Discussions](https://github.com/yourusername/surrealix/discussions)
-- [Discord](your-discord-link)
+- [Issues](https://github.com/DrewRidley/surrealix/issues)
+- [Discussions](https://github.com/DrewRidley/surrealix/discussions)
 ```
