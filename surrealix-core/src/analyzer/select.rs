@@ -315,11 +315,8 @@ fn find_relation_field(
     edge_obj: &ObjectType,
     dir: &surrealdb::sql::Dir,
 ) -> Result<(String, String), AnalysisError> {
-    // Handle the case when dealing with the user table
-    if edge_obj.fields.contains_key("id") {
-        return Ok(("id".to_string(), "user".to_string()));
-    }
-
+    // Remove the hardcoded check for "id" field that assumes "user" table
+    
     let (primary, fallback) = match dir {
         surrealdb::sql::Dir::Out => ("out", "in"),
         surrealdb::sql::Dir::In => ("in", "out"),
@@ -330,11 +327,18 @@ fn find_relation_field(
         }
     };
 
+    // First try to find the primary field based on direction
     let primary_field = edge_obj.fields.get(primary);
+    
+    // If primary field is not found, try the fallback field
     let fallback_field = edge_obj.fields.get(fallback);
-
-    match (primary_field, fallback_field) {
-        (Some(field), _) | (None, Some(field)) => {
+    
+    // If we have an "id" field and it's a record link, use that
+    let id_field = edge_obj.fields.get("id");
+    
+    match (primary_field, fallback_field, id_field) {
+        // First priority: use the primary field based on direction
+        (Some(field), _, _) => {
             if let TypeAST::Record(target_table) = &field.ast {
                 Ok((
                     field.meta.original_name.to_string(),
@@ -342,12 +346,42 @@ fn find_relation_field(
                 ))
             } else {
                 Err(AnalysisError::UnsupportedType(format!(
-                    "Expected a record link but found other type."
+                    "Expected a record link for '{}' but found other type.",
+                    primary
                 )))
             }
-        }
-        (None, None) => Err(AnalysisError::UnknownField(format!(
-            "Neither '{}' nor '{}' field found in edge object",
+        },
+        // Second priority: use the fallback field
+        (None, Some(field), _) => {
+            if let TypeAST::Record(target_table) = &field.ast {
+                Ok((
+                    field.meta.original_name.to_string(),
+                    target_table.to_string(),
+                ))
+            } else {
+                Err(AnalysisError::UnsupportedType(format!(
+                    "Expected a record link for '{}' but found other type.",
+                    fallback
+                )))
+            }
+        },
+        // Third priority: if there's an id field that's a record link, use that
+        (None, None, Some(field)) => {
+            if let TypeAST::Record(target_table) = &field.ast {
+                Ok((
+                    "id".to_string(),
+                    target_table.to_string(),
+                ))
+            } else {
+                Err(AnalysisError::UnknownField(format!(
+                    "Neither '{}', '{}', nor 'id' field is a valid record link in edge object",
+                    primary, fallback
+                )))
+            }
+        },
+        // No valid fields found
+        (None, None, None) => Err(AnalysisError::UnknownField(format!(
+            "Neither '{}', '{}', nor 'id' field found in edge object",
             primary, fallback
         ))),
     }
@@ -750,5 +784,67 @@ mod tests {
         assert!(friends_obj.fields.contains_key("address"));
         assert!(friends_obj.fields.contains_key("tags"));
         assert!(friends_obj.fields.contains_key("best_friend"));
+    }
+
+    #[test]
+    fn test_graph_traversal_with_different_tables() {
+        // Create a schema with different table names to test edge correlation
+        let schema = r#"
+            DEFINE TABLE person SCHEMAFULL;
+                DEFINE FIELD id on person TYPE uuid;
+                DEFINE FIELD name ON person TYPE string;
+            DEFINE TABLE follows SCHEMAFULL;
+                DEFINE FIELD id on follows TYPE record<person>;
+                DEFINE FIELD in ON follows TYPE record<person>;
+                DEFINE FIELD out ON follows TYPE record<person>;
+            DEFINE TABLE post SCHEMAFULL;
+                DEFINE FIELD id on post TYPE uuid;
+                DEFINE FIELD title on post TYPE string;
+            DEFINE TABLE authored SCHEMAFULL;
+                DEFINE FIELD id on authored TYPE record<person>;
+                DEFINE FIELD in ON authored TYPE record<post>;
+                DEFINE FIELD out ON authored TYPE record<person>;
+        "#;
+
+        let parsed = surrealdb::sql::parse(schema).unwrap();
+        let schema = analyze_schema(parsed).unwrap();
+        
+        // Test person->follows->person traversal
+        let stmt = parse_select("SELECT name, ->follows->person.name as following FROM person");
+        let result = analyze_select(&schema, &stmt).unwrap();
+        
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+        
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+        
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("following"));
+        
+        // Test person->authored->post traversal
+        let stmt = parse_select("SELECT name, ->authored->post.title as posts FROM person");
+        let result = analyze_select(&schema, &stmt).unwrap();
+        
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+        
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+        
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("posts"));
+        
+        let TypeAST::Array(posts_arr) = &obj.fields["posts"].ast else {
+            panic!("Expected Array TypeAST for posts");
+        };
+        
+        assert!(matches!(posts_arr.0, TypeAST::Scalar(ScalarType::String)));
     }
 }
