@@ -16,8 +16,7 @@ pub fn analyze_select(schema: &TypeAST, stmt: &SelectStatement) -> Result<TypeAS
 
     let base_type = analyze_from(&schema_obj, &stmt.what)?;
 
-    let mut selected_type = apply_field_selection(schema, &base_type, &stmt.expr, &stmt.omit)
-        .map_err(|e| AnalysisError::UnsupportedOperation(e.to_string()))?;
+    let mut selected_type = apply_field_selection(schema, &base_type, &stmt.expr, &stmt.omit)?;
 
     if let Some(fetch) = &stmt.fetch {
         for fetch_item in &fetch.0 {
@@ -315,11 +314,7 @@ fn find_relation_field(
     edge_obj: &ObjectType,
     dir: &surrealdb::sql::Dir,
 ) -> Result<(String, String), AnalysisError> {
-    // Handle the case when dealing with the user table
-    if edge_obj.fields.contains_key("id") {
-        return Ok(("id".to_string(), "user".to_string()));
-    }
-
+    // Determine primary and fallback field names based on direction
     let (primary, fallback) = match dir {
         surrealdb::sql::Dir::Out => ("out", "in"),
         surrealdb::sql::Dir::In => ("in", "out"),
@@ -330,27 +325,42 @@ fn find_relation_field(
         }
     };
 
-    let primary_field = edge_obj.fields.get(primary);
-    let fallback_field = edge_obj.fields.get(fallback);
-
-    match (primary_field, fallback_field) {
-        (Some(field), _) | (None, Some(field)) => {
-            if let TypeAST::Record(target_table) = &field.ast {
-                Ok((
-                    field.meta.original_name.to_string(),
-                    target_table.to_string(),
-                ))
-            } else {
-                Err(AnalysisError::UnsupportedType(format!(
-                    "Expected a record link but found other type."
-                )))
-            }
+    // First try to find the primary field
+    if let Some(field) = edge_obj.fields.get(primary) {
+        if let TypeAST::Record(target_table) = &field.ast {
+            return Ok((
+                field.meta.original_name.to_string(),
+                target_table.to_string(),
+            ));
+        } else {
+            return Err(AnalysisError::UnsupportedType(format!(
+                "Field '{}' exists but is not a record type",
+                primary
+            )));
         }
-        (None, None) => Err(AnalysisError::UnknownField(format!(
-            "Neither '{}' nor '{}' field found in edge object",
-            primary, fallback
-        ))),
     }
+
+    // If primary field not found, try the fallback field
+    if let Some(field) = edge_obj.fields.get(fallback) {
+        if let TypeAST::Record(target_table) = &field.ast {
+            return Ok((
+                field.meta.original_name.to_string(),
+                target_table.to_string(),
+            ));
+        } else {
+            return Err(AnalysisError::UnsupportedType(format!(
+                "Field '{}' exists but is not a record type",
+                fallback
+            )));
+        }
+    }
+
+    // If both primary and fallback fields are not found,
+    // return an appropriate error
+    Err(AnalysisError::UnknownField(format!(
+        "Neither '{}' nor '{}' field found in edge object",
+        primary, fallback
+    )))
 }
 
 fn is_field_omitted(field_name: &str, omit: &Option<Idioms>) -> bool {
@@ -750,5 +760,145 @@ mod tests {
         assert!(friends_obj.fields.contains_key("address"));
         assert!(friends_obj.fields.contains_key("tags"));
         assert!(friends_obj.fields.contains_key("best_friend"));
+    }
+
+    #[test]
+    fn test_graph_traversal_with_different_tables() {
+        // Create a schema with multiple tables and relationships
+        let schema = r#"
+            DEFINE TABLE person SCHEMAFULL;
+                DEFINE FIELD id on person TYPE uuid;
+                DEFINE FIELD name ON person TYPE string;
+                DEFINE FIELD age ON person TYPE number;
+            
+            DEFINE TABLE knows SCHEMAFULL;
+                DEFINE FIELD in ON knows TYPE record<person>;
+                DEFINE FIELD out ON knows TYPE record<person>;
+                DEFINE FIELD since ON knows TYPE datetime;
+            
+            DEFINE TABLE city SCHEMAFULL;
+                DEFINE FIELD id on city TYPE uuid;
+                DEFINE FIELD name on city TYPE string;
+                DEFINE FIELD population on city TYPE number;
+            
+            DEFINE TABLE lives_in SCHEMAFULL;
+                DEFINE FIELD in ON lives_in TYPE record<city>;
+                DEFINE FIELD out ON lives_in TYPE record<person>;
+                DEFINE FIELD since ON lives_in TYPE datetime;
+        "#;
+
+        let parsed = surrealdb::sql::parse(schema).unwrap();
+        let schema_ast = analyze_schema(parsed).unwrap();
+        
+        // Test outgoing relationship from person to city through lives_in
+        let stmt = parse_select("SELECT name, ->lives_in->city.name as city_name FROM person");
+        let result = analyze_select(&schema_ast, &stmt).unwrap();
+        
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+        
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+        
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("city_name"));
+        
+        let TypeAST::Array(city_name_arr) = &obj.fields["city_name"].ast else {
+            panic!("Expected Array TypeAST for city_name");
+        };
+        
+        assert!(matches!(city_name_arr.0, TypeAST::Scalar(ScalarType::String)));
+        
+        // Test incoming relationship to person from another person through knows
+        let stmt = parse_select("SELECT name, <-knows<-person.name as known_by FROM person");
+        let result = analyze_select(&schema_ast, &stmt).unwrap();
+        
+        let TypeAST::Array(boxed_arr) = result else {
+            panic!("Expected Array TypeAST");
+        };
+        
+        let TypeAST::Object(obj) = boxed_arr.0 else {
+            panic!("Expected Object inside Array");
+        };
+        
+        assert_eq!(obj.fields.len(), 2);
+        assert!(obj.fields.contains_key("name"));
+        assert!(obj.fields.contains_key("known_by"));
+        
+        let TypeAST::Array(known_by_arr) = &obj.fields["known_by"].ast else {
+            panic!("Expected Array TypeAST for known_by");
+        };
+        
+        assert!(matches!(known_by_arr.0, TypeAST::Scalar(ScalarType::String)));
+    }
+
+    #[test]
+    fn test_graph_traversal_error_handling() {
+        // Create a schema with a table that has no proper relation fields
+        let schema = r#"
+            DEFINE TABLE node SCHEMAFULL;
+                DEFINE FIELD id on node TYPE uuid;
+                DEFINE FIELD name ON node TYPE string;
+            
+            // Edge with no proper relation fields
+            DEFINE TABLE bad_edge SCHEMAFULL;
+                DEFINE FIELD id ON bad_edge TYPE uuid;
+                DEFINE FIELD name ON bad_edge TYPE string;
+                // No 'in' or 'out' fields
+        "#;
+
+        let parsed = surrealdb::sql::parse(schema).unwrap();
+        let schema_ast = analyze_schema(parsed).unwrap();
+        
+        // Test with edge that has no relation fields
+        let stmt = parse_select("SELECT name, ->bad_edge->node.name as target_name FROM node");
+        let result = analyze_select(&schema_ast, &stmt);
+        
+        // This should fail gracefully
+        assert!(result.is_err());
+        
+        // Check that the error contains the expected text
+        let error_string = format!("{:?}", result.unwrap_err());
+        assert!(error_string.contains("Neither 'out' nor 'in' field found"));
+    }
+
+    #[test]
+    fn test_graph_traversal_edge_cases() {
+        // Create a schema with edge cases
+        let schema = r#"
+            DEFINE TABLE node SCHEMAFULL;
+                DEFINE FIELD id on node TYPE uuid;
+                DEFINE FIELD name ON node TYPE string;
+            
+            // Edge with only one direction field
+            DEFINE TABLE one_way SCHEMAFULL;
+                DEFINE FIELD out ON one_way TYPE record<node>;
+                // No 'in' field
+            
+            // Edge with non-standard field names
+            DEFINE TABLE custom_edge SCHEMAFULL;
+                DEFINE FIELD source ON custom_edge TYPE record<node>;
+                DEFINE FIELD target ON custom_edge TYPE record<node>;
+        "#;
+
+        let parsed = surrealdb::sql::parse(schema).unwrap();
+        let schema_ast = analyze_schema(parsed).unwrap();
+        
+        // Test with edge that only has 'out' field
+        let stmt = parse_select("SELECT name, ->one_way->node.name as target_name FROM node");
+        let result = analyze_select(&schema_ast, &stmt);
+        
+        // This should fail gracefully since the edge doesn't have an 'in' field
+        assert!(result.is_err());
+        
+        // Test with incoming direction on edge that only has 'out' field
+        let stmt = parse_select("SELECT name, <-one_way<-node.name as source_name FROM node");
+        let result = analyze_select(&schema_ast, &stmt);
+        
+        // This should fail gracefully
+        assert!(result.is_err());
     }
 }
